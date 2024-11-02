@@ -36,6 +36,13 @@ func (app *Application) Collect() []error {
 	app.metricsCache.Metrics.LastBackupOriginalSize.Reset()
 	app.metricsCache.Metrics.LastBackupTimestamp.Reset()
 
+	app.metricsCache.Metrics.TotalChunks.Reset()
+	app.metricsCache.Metrics.TotalCompressedSize.Reset()
+	app.metricsCache.Metrics.TotalSize.Reset()
+	app.metricsCache.Metrics.TotalUniqueChunks.Reset()
+	app.metricsCache.Metrics.DeduplicatedCompressedSize.Reset()
+	app.metricsCache.Metrics.DeduplicatedSize.Reset()
+
 	app.metricsCache.Metrics.LastCollectDuration.Reset()
 	app.metricsCache.Metrics.LastCollectError.Reset()
 	app.metricsCache.Metrics.LastCollectTimestamp.Reset()
@@ -93,13 +100,14 @@ func (app *Application) Collect() []error {
 
 		// Update metrics
 		if len(info.Archives) > 0 {
+			// Set archive metrics
 			latest := info.Archives[len(info.Archives)-1]
 
 			app.metricsCache.Metrics.LastBackupDuration.WithLabelValues(borgRepository).Set(latest.Duration)
-			app.metricsCache.Metrics.LastBackupCompressedSize.WithLabelValues(borgRepository).Set(latest.Stats.CompressedSize)
-			app.metricsCache.Metrics.LastBackupDeduplicatedSize.WithLabelValues(borgRepository).Set(latest.Stats.DeduplicatedSize)
+			app.metricsCache.Metrics.LastBackupCompressedSize.WithLabelValues(borgRepository).Set(float64(latest.Stats.CompressedSize))
+			app.metricsCache.Metrics.LastBackupDeduplicatedSize.WithLabelValues(borgRepository).Set(float64(latest.Stats.DeduplicatedSize))
 			app.metricsCache.Metrics.LastBackupFiles.WithLabelValues(borgRepository).Set(float64(latest.Stats.NFiles))
-			app.metricsCache.Metrics.LastBackupOriginalSize.WithLabelValues(borgRepository).Set(latest.Stats.OriginalSize)
+			app.metricsCache.Metrics.LastBackupOriginalSize.WithLabelValues(borgRepository).Set(float64(latest.Stats.OriginalSize))
 			app.metricsCache.Metrics.LastBackupTimestamp.WithLabelValues(borgRepository).Set(float64(latest.Start.Unix()))
 
 			// Set last archive info metric
@@ -114,6 +122,14 @@ func (app *Application) Collect() []error {
 				latest.Username,
 			).Set(1)
 		}
+
+		// Set repository metrics
+		app.metricsCache.Metrics.TotalChunks.WithLabelValues(borgRepository).Set(float64(info.Cache.Stats.TotalChunks))
+		app.metricsCache.Metrics.TotalCompressedSize.WithLabelValues(borgRepository).Set(float64(info.Cache.Stats.TotalCompressedSize))
+		app.metricsCache.Metrics.TotalSize.WithLabelValues(borgRepository).Set(float64(info.Cache.Stats.TotalSize))
+		app.metricsCache.Metrics.TotalUniqueChunks.WithLabelValues(borgRepository).Set(float64(info.Cache.Stats.TotalUniqueChunks))
+		app.metricsCache.Metrics.DeduplicatedCompressedSize.WithLabelValues(borgRepository).Set(float64(info.Cache.Stats.DeduplicatedCompressedSize))
+		app.metricsCache.Metrics.DeduplicatedSize.WithLabelValues(borgRepository).Set(float64(info.Cache.Stats.DeduplicatedSize))
 
 		// Set repository info metric
 		app.metricsCache.Metrics.RepositoryInfo.WithLabelValues(

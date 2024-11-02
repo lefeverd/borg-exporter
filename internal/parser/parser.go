@@ -1,4 +1,4 @@
-package utils
+package parser
 
 import (
 	"encoding/json"
@@ -40,6 +40,14 @@ func ParseBorgTime(s string) (BorgTime, error) {
 	return bt, nil
 }
 
+// InfoOutput represents the rood node of the json
+type InfoOutput struct {
+	Archives   []InfoOutputArchive  `json:"archives"`
+	Cache      InfoOutputCache      `json:"cache"`
+	Repository InfoOutputRepository `json:"repository"`
+	Encryption InfoOutputEncryption `json:"encryption"`
+}
+
 type InfoOutputArchive struct {
 	Comment  string                 `json:"comment"`
 	Duration float64                `json:"duration"`
@@ -53,10 +61,24 @@ type InfoOutputArchive struct {
 }
 
 type InfoOutputArchiveStats struct {
-	CompressedSize   float64 `json:"compressed_size"`
-	DeduplicatedSize float64 `json:"deduplicated_size"`
-	NFiles           int64   `json:"nfiles"`
-	OriginalSize     float64 `json:"original_size"`
+	CompressedSize   int64 `json:"compressed_size"`
+	DeduplicatedSize int64 `json:"deduplicated_size"`
+	NFiles           int64 `json:"nfiles"`
+	OriginalSize     int64 `json:"original_size"`
+}
+
+type InfoOutputCache struct {
+	Path  string               `json:"path"`
+	Stats InfoOutputCacheStats `json:"stats"`
+}
+
+type InfoOutputCacheStats struct {
+	TotalChunks                int64 `json:"total_chunks"`
+	TotalCompressedSize        int64 `json:"total_csize"`
+	TotalSize                  int64 `json:"total_size"`
+	TotalUniqueChunks          int64 `json:"total_unique_chunks"`
+	DeduplicatedCompressedSize int64 `json:"unique_csize"`
+	DeduplicatedSize           int64 `json:"unique_size"`
 }
 
 type InfoOutputRepository struct {
@@ -67,12 +89,6 @@ type InfoOutputRepository struct {
 
 type InfoOutputEncryption struct {
 	Mode string `json:"mode"`
-}
-
-type InfoOutput struct {
-	Archives   []InfoOutputArchive  `json:"archives"`
-	Repository InfoOutputRepository `json:"repository"`
-	Encryption InfoOutputEncryption `json:"encryption"`
 }
 
 type BorgParser struct{}

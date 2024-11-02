@@ -1,4 +1,4 @@
-package utils
+package parser
 
 import (
 	"github.com/stretchr/testify/assert"
@@ -34,6 +34,17 @@ func TestBorgParser_ParseInfo(t *testing.T) {
 							OriginalSize:     1341294469810,
 						},
 						Username: "root",
+					},
+				},
+				Cache: InfoOutputCache{
+					Path: "/root/.cache/borg/03a461422fd3be21cbf5235e8d40c2ecbe28b1e4c295ae2ac456563ca62c94af",
+					Stats: InfoOutputCacheStats{
+						TotalChunks:                139398821,
+						TotalCompressedSize:        4055905565460,
+						TotalSize:                  7047547605252,
+						TotalUniqueChunks:          1675085,
+						DeduplicatedCompressedSize: 304339691351,
+						DeduplicatedSize:           454963879225,
 					},
 				},
 				Repository: InfoOutputRepository{

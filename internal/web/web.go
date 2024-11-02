@@ -5,7 +5,7 @@ import (
 	"errors"
 	"flag"
 	"github.com/lefeverd/borg-exporter/internal/models"
-	"github.com/lefeverd/borg-exporter/internal/utils"
+	"github.com/lefeverd/borg-exporter/internal/parser"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"log"
@@ -32,7 +32,7 @@ type Application struct {
 	config           *config
 	borgRepositories []string
 	metricsCache     *models.MetricsCache
-	borgParser       utils.BorgParserInterface
+	borgParser       parser.BorgParserInterface
 }
 
 func Execute() {
@@ -70,7 +70,7 @@ func Execute() {
 	app.metricsCache = &models.MetricsCache{
 		Metrics: models.NewBorgMetrics(app.getBorgVersion()),
 	}
-	app.borgParser = &utils.BorgParser{}
+	app.borgParser = &parser.BorgParser{}
 
 	// Create non-global registry and register our metrics
 	reg := prometheus.NewRegistry()
@@ -86,6 +86,7 @@ func Execute() {
 
 	go func() {
 		for range ticker.C {
+			app.logger.Info("Refreshing metrics")
 			app.CollectWrapper()
 		}
 	}()
@@ -151,7 +152,6 @@ func (app *Application) getBorgVersion() string {
 
 // CollectWrapper wraps the Collect method and logs any errors
 func (app *Application) CollectWrapper() {
-	app.logger.Info("Refreshing metrics")
 	errs := app.Collect()
 	if len(errs) != 0 {
 		app.logger.Error("Collection failed with the following error(s):")
