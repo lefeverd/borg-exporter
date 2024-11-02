@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"flag"
-	"fmt"
 	"github.com/lefeverd/borg-exporter/internal/models"
 	"github.com/lefeverd/borg-exporter/internal/utils"
 	"github.com/prometheus/client_golang/prometheus"
@@ -19,15 +18,17 @@ import (
 )
 
 type config struct {
-	listenAddress    string
-	metricsPath      string
-	cacheTimeout     time.Duration
-	commandTimeout   time.Duration
-	borgRepositories string
+	listenAddress          string
+	metricsPath            string
+	metricsRefreshInterval time.Duration
+	commandTimeout         time.Duration
+	borgRepositories       string
+	logLevel               string
 }
 
 type Application struct {
 	logger           *slog.Logger
+	logLevel         *slog.LevelVar
 	config           *config
 	borgRepositories []string
 	metricsCache     *models.MetricsCache
@@ -35,19 +36,25 @@ type Application struct {
 }
 
 func Execute() {
-	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	logLevel := &slog.LevelVar{} // INFO
+	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+		Level: logLevel,
+	}))
 	app := &Application{
-		logger: logger,
+		logger:   logger,
+		logLevel: logLevel,
 	}
 
 	app.logger.Info("Starting borg-exporter")
 
+	// Parse configuration
 	var cfg config
 	flag.StringVar(&cfg.listenAddress, "listen-address", app.getEnv("LISTEN_ADDRESS", ":9099"), "http service address")
 	flag.StringVar(&cfg.metricsPath, "metrics-path", app.getEnv("METRICS_PATH", "/metrics"), "metrics endpoint path")
-	flag.DurationVar(&cfg.cacheTimeout, "cache-timeout", app.getDurationEnv("CACHE_TIMEOUT", 12*time.Hour), "cache timeout (default 12h)")
+	flag.DurationVar(&cfg.metricsRefreshInterval, "metrics-refresh-interval", app.getDurationEnv("METRICS_REFRESH_INTERVAL", 12*time.Hour), "metrics refresh interval (default 12h)")
 	flag.DurationVar(&cfg.commandTimeout, "command-timeout", app.getDurationEnv("COMMAND_TIMEOUT", 120*time.Second), "borg command timeout (default 120s)")
 	flag.StringVar(&cfg.borgRepositories, "borg-repositories", os.Getenv("BORG_REPOSITORIES"), "comma-separated list of borg repositories")
+	flag.StringVar(&cfg.logLevel, "log-level", os.Getenv("LOG_LEVEL"), "log level")
 	flag.Parse()
 	app.config = &cfg
 
@@ -57,41 +64,37 @@ func Execute() {
 	}
 	app.borgRepositories = strings.Split(cfg.borgRepositories, ",")
 
-	// Create the metrics cache
+	app.setLogLevel()
+
+	// Setup our app by injecting our dependencies
 	app.metricsCache = &models.MetricsCache{
 		Metrics: models.NewBorgMetrics(app.getBorgVersion()),
 	}
-
-	// Create the borg parser
 	app.borgParser = &utils.BorgParser{}
 
-	// Health check endpoint
-	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-	})
-
-	// Create non-global registry.
+	// Create non-global registry and register our metrics
 	reg := prometheus.NewRegistry()
-	http.Handle("/metrics", promhttp.HandlerFor(reg, promhttp.HandlerOpts{Registry: reg}))
-
-	// Register the metrics to the registry
 	app.metricsCache.Metrics.Register(reg)
 
 	app.logger.Info("Starting initial collection")
-	err := app.Collect()
-	if err != nil {
-		app.logger.Error("Initial collection failed", "error", err)
-		var exitError *exec.ExitError
-		if errors.As(err, &exitError) {
-			// Get stderr directly from the ExitError
-			if len(exitError.Stderr) > 0 {
-				fmt.Printf("Command stderr: %s\n", string(exitError.Stderr))
-			}
-		}
-		os.Exit(1)
-	}
+	app.CollectWrapper()
 	app.logger.Info("Initial collection done")
 
+	// Run the collection every refresh interval
+	ticker := time.NewTicker(app.config.metricsRefreshInterval)
+	defer ticker.Stop()
+
+	go func() {
+		for range ticker.C {
+			app.CollectWrapper()
+		}
+	}()
+
+	// Create our endpoints and start the web server
+	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+	http.Handle("/metrics", promhttp.HandlerFor(reg, promhttp.HandlerOpts{Registry: reg}))
 	log.Printf("Starting borgmatic exporter on %s", cfg.listenAddress)
 	log.Fatal(http.ListenAndServe(cfg.listenAddress, nil))
 }
@@ -115,6 +118,23 @@ func (app *Application) getDurationEnv(key string, fallback time.Duration) time.
 	return fallback
 }
 
+func (app *Application) setLogLevel() {
+	if app.config.logLevel == "" {
+		return
+	}
+	level := strings.ToLower(app.config.logLevel)
+	switch level {
+	case "debug":
+		app.logLevel.Set(slog.LevelDebug)
+	case "warn":
+		app.logLevel.Set(slog.LevelWarn)
+	case "error":
+		app.logLevel.Set(slog.LevelError)
+	default:
+		app.logLevel.Set(slog.LevelInfo)
+	}
+}
+
 func (app *Application) getBorgVersion() string {
 	// Create command with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), app.config.commandTimeout)
@@ -129,100 +149,20 @@ func (app *Application) getBorgVersion() string {
 	return strings.TrimSpace(string(output))
 }
 
-// Collect collects the metrics from borg and caches them, only if the last collection is older than
-// the cache timeout.
-func (app *Application) Collect() error {
-	app.metricsCache.Lock()
-	defer app.metricsCache.Unlock()
+// CollectWrapper wraps the Collect method and logs any errors
+func (app *Application) CollectWrapper() {
+	app.logger.Info("Refreshing metrics")
+	errs := app.Collect()
+	if len(errs) != 0 {
+		app.logger.Error("Collection failed with the following error(s):")
+		for _, err := range errs {
+			var repositoryCollectionError *RepositoryCollectionError
+			if errors.As(err, &repositoryCollectionError) {
+				app.logger.Error(repositoryCollectionError.Msg, "repository", repositoryCollectionError.Repository, "error", repositoryCollectionError.Err, "stdErr", repositoryCollectionError.StdErr)
+				continue
+			}
 
-	// Check if collection is already in progress
-	if app.metricsCache.Collecting {
-		return nil
-	}
-
-	// Check if cache is still valid
-	if time.Since(app.metricsCache.LastUpdate) < app.config.cacheTimeout {
-		return nil
-	}
-
-	app.metricsCache.Collecting = true
-	defer func() {
-		app.metricsCache.Collecting = false
-	}()
-
-	startTime := time.Now()
-
-	// Reset the metrics
-	app.metricsCache.Metrics.LastBackupDuration.Reset()
-	app.metricsCache.Metrics.LastBackupCompressedSize.Reset()
-	app.metricsCache.Metrics.LastBackupDeduplicatedSize.Reset()
-	app.metricsCache.Metrics.LastBackupFiles.Reset()
-	app.metricsCache.Metrics.LastBackupOriginalSize.Reset()
-	app.metricsCache.Metrics.LastBackupTimestamp.Reset()
-
-	app.metricsCache.Metrics.LastCollectDuration.Reset()
-	app.metricsCache.Metrics.LastCollectError.Reset()
-	app.metricsCache.Metrics.CollectErrors.Reset()
-
-	app.metricsCache.Metrics.LastArchiveInfo.Reset()
-	app.metricsCache.Metrics.RepositoryInfo.Reset()
-
-	// Create command with timeout
-	ctx, cancel := context.WithTimeout(context.Background(), app.config.commandTimeout)
-	defer cancel()
-
-	for _, borgRepository := range app.borgRepositories {
-		cmd := exec.CommandContext(ctx, "borg", "info", "--last", "1", "--json", borgRepository)
-		output, err := cmd.Output()
-		app.metricsCache.Metrics.LastCollectDuration.WithLabelValues(borgRepository).Set(time.Since(startTime).Seconds())
-
-		if err != nil {
-			app.metricsCache.Metrics.LastCollectError.WithLabelValues(borgRepository).Set(1)
-			app.metricsCache.Metrics.CollectErrors.WithLabelValues(borgRepository).Inc()
-			return err
+			app.logger.Error(err.Error())
 		}
-
-		info, err := app.borgParser.ParseInfo(output)
-		if err != nil {
-			app.metricsCache.Metrics.LastCollectError.WithLabelValues(borgRepository).Set(1)
-			app.metricsCache.Metrics.CollectErrors.WithLabelValues(borgRepository).Inc()
-			return err
-		}
-
-		// Update metrics
-		if len(info.Archives) > 0 {
-			latest := info.Archives[len(info.Archives)-1]
-
-			app.metricsCache.Metrics.LastBackupDuration.WithLabelValues(borgRepository).Set(latest.Duration)
-			app.metricsCache.Metrics.LastBackupCompressedSize.WithLabelValues(borgRepository).Set(latest.Stats.CompressedSize)
-			app.metricsCache.Metrics.LastBackupDeduplicatedSize.WithLabelValues(borgRepository).Set(latest.Stats.DeduplicatedSize)
-			app.metricsCache.Metrics.LastBackupFiles.WithLabelValues(borgRepository).Set(float64(latest.Stats.NFiles))
-			app.metricsCache.Metrics.LastBackupOriginalSize.WithLabelValues(borgRepository).Set(latest.Stats.OriginalSize)
-			app.metricsCache.Metrics.LastBackupTimestamp.WithLabelValues(borgRepository).Set(float64(latest.Start.Unix()))
-
-			// Set last archive info metric
-			app.metricsCache.Metrics.LastArchiveInfo.WithLabelValues(
-				borgRepository,
-				latest.Comment,
-				latest.Start.Format(time.RFC3339),
-				latest.End.Format(time.RFC3339),
-				latest.Hostname,
-				latest.ID,
-				latest.Name,
-				latest.Username,
-			).Set(1)
-		}
-
-		// Set repository info metric
-		app.metricsCache.Metrics.RepositoryInfo.WithLabelValues(
-			borgRepository,
-			info.Repository.ID,
-			info.Repository.LastModified.Format(time.RFC3339),
-			info.Repository.Location,
-		).Set(1)
-
-		app.metricsCache.Metrics.LastCollectError.WithLabelValues(borgRepository).Set(0)
-		app.metricsCache.LastUpdate = time.Now()
 	}
-	return nil
 }

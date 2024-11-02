@@ -15,9 +15,10 @@ type BorgMetrics struct {
 	LastBackupTimestamp        *prometheus.GaugeVec
 
 	// exporter collection metrics
-	CollectErrors       *prometheus.CounterVec
-	LastCollectError    *prometheus.GaugeVec
-	LastCollectDuration *prometheus.GaugeVec
+	CollectErrors        *prometheus.CounterVec
+	LastCollectError     *prometheus.GaugeVec
+	LastCollectDuration  *prometheus.GaugeVec
+	LastCollectTimestamp *prometheus.GaugeVec
 
 	// info metrics
 	LastArchiveInfo *prometheus.GaugeVec
@@ -25,7 +26,7 @@ type BorgMetrics struct {
 	SystemInfo      *prometheus.GaugeVec
 }
 
-// NewBorgMetrics creates an empty BorgMetrics object and returns a pointer to it
+// NewBorgMetrics creates a BorgMetrics object containing all the metrics and returns a pointer to it
 func NewBorgMetrics(borgVersion string) *BorgMetrics {
 	hostname, err := os.Hostname()
 	if err != nil {
@@ -54,7 +55,7 @@ func NewBorgMetrics(borgVersion string) *BorgMetrics {
 			Help: "Size of the last backup in bytes",
 		}, []string{"repository"}),
 		LastBackupTimestamp: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Name: "borgmatic_last_backup_timestamp",
+			Name: "borg_last_backup_timestamp",
 			Help: "Timestamp of the last backup",
 		}, []string{"repository"}),
 
@@ -70,6 +71,10 @@ func NewBorgMetrics(borgVersion string) *BorgMetrics {
 		LastCollectDuration: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Name: "borg_last_collect_duration_seconds",
 			Help: "Duration of the last metrics collection",
+		}, []string{"repository"}),
+		LastCollectTimestamp: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Name: "borg_last_collect_timestamp",
+			Help: "Timestamp of the last metrics collection",
 		}, []string{"repository"}),
 
 		// Info metrics
@@ -118,6 +123,7 @@ func (m *BorgMetrics) Register(registry *prometheus.Registry) {
 	registry.MustRegister(m.CollectErrors)
 	registry.MustRegister(m.LastCollectError)
 	registry.MustRegister(m.LastCollectDuration)
+	registry.MustRegister(m.LastCollectTimestamp)
 	registry.MustRegister(m.LastArchiveInfo)
 	registry.MustRegister(m.RepositoryInfo)
 	registry.MustRegister(m.SystemInfo)
