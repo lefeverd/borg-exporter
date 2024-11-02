@@ -1,0 +1,59 @@
+{
+  "archives": [
+    {
+      "chunker_params": [
+        "buzhash",
+        19,
+        23,
+        21,
+        4095
+      ],
+      "command_line": [
+        "/usr/bin/borg",
+        "create",
+        "--patterns-from",
+        "/tmp/tmpubnzdodg",
+        "--exclude-from",
+        "/tmp/tmphz6b47hp",
+        "--info",
+        "ssh://backuphost/backups/backup-name::{hostname}-{now:%Y-%m-%dT%H:%M:%S.%f}"
+      ],
+      "comment": "",
+      "duration": 4540.154685,
+      "end": "2024-10-28T21:52:44.000000",
+      "hostname": "my-hostname",
+      "id": "a0ef59abfd45d22460a586053e7266e24b9989d00d44aae8442d3d8e6fe92cbf",
+      "limits": {
+        "max_archive_size": 0.08339693161364536
+      },
+      "name": "my-hostname-2024-10-28T20:37:03.464475",
+      "start": "2024-10-28T20:37:04.000000",
+      "stats": {
+        "compressed_size": 687831993433,
+        "deduplicated_size": 53654483387,
+        "nfiles": 13079758,
+        "original_size": 1341294469810
+      },
+      "username": "root"
+    }
+  ],
+  "cache": {
+    "path": "/root/.cache/borg/03a461422fd3be21cbf5235e8d40c2ecbe28b1e4c295ae2ac456563ca62c94af",
+    "stats": {
+      "total_chunks": 139398821,
+      "total_csize": 4055905565460,
+      "total_size": 7047547605252,
+      "total_unique_chunks": 1675085,
+      "unique_csize": 304339691351,
+      "unique_size": 454963879225
+    }
+  },
+  "encryption": {
+    "mode": "none"
+  },
+  "repository": {
+    "id": "c58db5835b4fbd34ac8c747897674d46c58db5835b4fbd34ac8c747897674d46",
+    "last_modified": "2024-10-28T22:00:45.000000",
+    "location": "ssh://backup-host/backups/backup-name"
+  }
+}

@@ -2,7 +2,9 @@ package web
 
 import (
 	"context"
+	"errors"
 	"flag"
+	"fmt"
 	"github.com/lefeverd/borg-exporter/internal/models"
 	"github.com/lefeverd/borg-exporter/internal/utils"
 	"github.com/prometheus/client_golang/prometheus"
@@ -17,17 +19,19 @@ import (
 )
 
 type config struct {
-	listenAddress  string
-	metricsPath    string
-	cacheTimeout   time.Duration
-	commandTimeout time.Duration
+	listenAddress    string
+	metricsPath      string
+	cacheTimeout     time.Duration
+	commandTimeout   time.Duration
+	borgRepositories string
 }
 
 type Application struct {
-	logger       *slog.Logger
-	config       *config
-	metricsCache *models.MetricsCache
-	borgParser   utils.BorgParserInterface
+	logger           *slog.Logger
+	config           *config
+	borgRepositories []string
+	metricsCache     *models.MetricsCache
+	borgParser       utils.BorgParserInterface
 }
 
 func Execute() {
@@ -42,9 +46,16 @@ func Execute() {
 	flag.StringVar(&cfg.listenAddress, "listen-address", app.getEnv("LISTEN_ADDRESS", ":9099"), "http service address")
 	flag.StringVar(&cfg.metricsPath, "metrics-path", app.getEnv("METRICS_PATH", "/metrics"), "metrics endpoint path")
 	flag.DurationVar(&cfg.cacheTimeout, "cache-timeout", app.getDurationEnv("CACHE_TIMEOUT", 12*time.Hour), "cache timeout (default 12h)")
-	flag.DurationVar(&cfg.commandTimeout, "command-timeout", app.getDurationEnv("COMMAND_TIMEOUT", 60*time.Second), "borg command timeout (default 60s)")
+	flag.DurationVar(&cfg.commandTimeout, "command-timeout", app.getDurationEnv("COMMAND_TIMEOUT", 120*time.Second), "borg command timeout (default 120s)")
+	flag.StringVar(&cfg.borgRepositories, "borg-repositories", os.Getenv("BORG_REPOSITORIES"), "comma-separated list of borg repositories")
 	flag.Parse()
 	app.config = &cfg
+
+	if cfg.borgRepositories == "" {
+		app.logger.Error("No borg repositories defined")
+		os.Exit(1)
+	}
+	app.borgRepositories = strings.Split(cfg.borgRepositories, ",")
 
 	// Create the metrics cache
 	app.metricsCache = &models.MetricsCache{
@@ -70,6 +81,13 @@ func Execute() {
 	err := app.Collect()
 	if err != nil {
 		app.logger.Error("Initial collection failed", "error", err)
+		var exitError *exec.ExitError
+		if errors.As(err, &exitError) {
+			// Get stderr directly from the ExitError
+			if len(exitError.Stderr) > 0 {
+				fmt.Printf("Command stderr: %s\n", string(exitError.Stderr))
+			}
+		}
 		os.Exit(1)
 	}
 	app.logger.Info("Initial collection done")
@@ -134,60 +152,77 @@ func (app *Application) Collect() error {
 
 	startTime := time.Now()
 
+	// Reset the metrics
+	app.metricsCache.Metrics.LastBackupDuration.Reset()
+	app.metricsCache.Metrics.LastBackupCompressedSize.Reset()
+	app.metricsCache.Metrics.LastBackupDeduplicatedSize.Reset()
+	app.metricsCache.Metrics.LastBackupFiles.Reset()
+	app.metricsCache.Metrics.LastBackupOriginalSize.Reset()
+	app.metricsCache.Metrics.LastBackupTimestamp.Reset()
+
+	app.metricsCache.Metrics.LastCollectDuration.Reset()
+	app.metricsCache.Metrics.LastCollectError.Reset()
+	app.metricsCache.Metrics.CollectErrors.Reset()
+
+	app.metricsCache.Metrics.LastArchiveInfo.Reset()
+	app.metricsCache.Metrics.RepositoryInfo.Reset()
+
 	// Create command with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), app.config.commandTimeout)
 	defer cancel()
 
-	cmd := exec.CommandContext(ctx, "borgmatic", "info", "--json")
-	output, err := cmd.Output()
+	for _, borgRepository := range app.borgRepositories {
+		cmd := exec.CommandContext(ctx, "borg", "info", "--last", "1", "--json", borgRepository)
+		output, err := cmd.Output()
+		app.metricsCache.Metrics.LastCollectDuration.WithLabelValues(borgRepository).Set(time.Since(startTime).Seconds())
 
-	app.metricsCache.Metrics.LastCollectDuration.Set(time.Since(startTime).Seconds())
+		if err != nil {
+			app.metricsCache.Metrics.LastCollectError.WithLabelValues(borgRepository).Set(1)
+			app.metricsCache.Metrics.CollectErrors.WithLabelValues(borgRepository).Inc()
+			return err
+		}
 
-	if err != nil {
-		app.metricsCache.Metrics.LastCollectError.Set(1)
-		app.metricsCache.Metrics.CollectErrors.Inc()
-		return err
-	}
+		info, err := app.borgParser.ParseInfo(output)
+		if err != nil {
+			app.metricsCache.Metrics.LastCollectError.WithLabelValues(borgRepository).Set(1)
+			app.metricsCache.Metrics.CollectErrors.WithLabelValues(borgRepository).Inc()
+			return err
+		}
 
-	info, err := app.borgParser.ParseInfo(output)
-	if err != nil {
-		app.metricsCache.Metrics.LastCollectError.Set(1)
-		app.metricsCache.Metrics.CollectErrors.Inc()
-		return err
-	}
+		// Update metrics
+		if len(info.Archives) > 0 {
+			latest := info.Archives[len(info.Archives)-1]
 
-	// Update metrics
-	if len(info.Archives) > 0 {
-		latest := info.Archives[len(info.Archives)-1]
-		app.metricsCache.Metrics.LastBackupDuration.Set(latest.Duration)
-		app.metricsCache.Metrics.LastBackupCompressedSize.Set(latest.Stats.CompressedSize)
-		app.metricsCache.Metrics.LastBackupDeduplicatedSize.Set(latest.Stats.DeduplicatedSize)
-		app.metricsCache.Metrics.LastBackupFiles.Set(float64(latest.Stats.NFiles))
-		app.metricsCache.Metrics.LastBackupOriginalSize.Set(latest.Stats.OriginalSize)
-		app.metricsCache.Metrics.LastBackupTimestamp.Set(float64(latest.Start.Unix()))
+			app.metricsCache.Metrics.LastBackupDuration.WithLabelValues(borgRepository).Set(latest.Duration)
+			app.metricsCache.Metrics.LastBackupCompressedSize.WithLabelValues(borgRepository).Set(latest.Stats.CompressedSize)
+			app.metricsCache.Metrics.LastBackupDeduplicatedSize.WithLabelValues(borgRepository).Set(latest.Stats.DeduplicatedSize)
+			app.metricsCache.Metrics.LastBackupFiles.WithLabelValues(borgRepository).Set(float64(latest.Stats.NFiles))
+			app.metricsCache.Metrics.LastBackupOriginalSize.WithLabelValues(borgRepository).Set(latest.Stats.OriginalSize)
+			app.metricsCache.Metrics.LastBackupTimestamp.WithLabelValues(borgRepository).Set(float64(latest.Start.Unix()))
 
-		// Set last archive info metric
-		app.metricsCache.Metrics.LastArchiveInfo.Reset() // Clear old labels
-		app.metricsCache.Metrics.LastArchiveInfo.WithLabelValues(
-			latest.Comment,
-			latest.Start.Format(time.RFC3339),
-			latest.End.Format(time.RFC3339),
-			latest.Hostname,
-			latest.ID,
-			latest.Name,
-			latest.Username,
+			// Set last archive info metric
+			app.metricsCache.Metrics.LastArchiveInfo.WithLabelValues(
+				borgRepository,
+				latest.Comment,
+				latest.Start.Format(time.RFC3339),
+				latest.End.Format(time.RFC3339),
+				latest.Hostname,
+				latest.ID,
+				latest.Name,
+				latest.Username,
+			).Set(1)
+		}
+
+		// Set repository info metric
+		app.metricsCache.Metrics.RepositoryInfo.WithLabelValues(
+			borgRepository,
+			info.Repository.ID,
+			info.Repository.LastModified.Format(time.RFC3339),
+			info.Repository.Location,
 		).Set(1)
+
+		app.metricsCache.Metrics.LastCollectError.WithLabelValues(borgRepository).Set(0)
+		app.metricsCache.LastUpdate = time.Now()
 	}
-
-	// Set repository info metric
-	app.metricsCache.Metrics.RepositoryInfo.Reset() // Clear old labels
-	app.metricsCache.Metrics.RepositoryInfo.WithLabelValues(
-		info.Repository.ID,
-		info.Repository.LastModified.Format(time.RFC3339),
-		info.Repository.Location,
-	).Set(1)
-
-	app.metricsCache.Metrics.LastCollectError.Set(0)
-	app.metricsCache.LastUpdate = time.Now()
 	return nil
 }
