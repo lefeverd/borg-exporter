@@ -1,0 +1,39 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: '1.23.2'
+
+      - name: Build
+        run: |
+          make build
+
+      - name: Package
+        run: |
+          make package
+
+      - name: Upload Release Asset
+        uses: actions/upload-artifact@v2
+        with:
+          name: myapp
+          path: build/
+
+      - name: Release to GitHub
+        uses: softprops/action-gh-release@v1
+        with:
+          files: build/*.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
