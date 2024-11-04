@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"flag"
+	"fmt"
 	"github.com/lefeverd/borg-exporter/internal/models"
 	"github.com/lefeverd/borg-exporter/internal/parser"
 	"github.com/prometheus/client_golang/prometheus"
@@ -37,7 +38,7 @@ type Application struct {
 	borgParser       parser.BorgParserInterface
 }
 
-func Execute() {
+func Execute(Version string) {
 	logLevel := &slog.LevelVar{} // INFO
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
 		Level: logLevel,
@@ -46,8 +47,6 @@ func Execute() {
 		logger:   logger,
 		logLevel: logLevel,
 	}
-
-	app.logger.Info("Starting borg-exporter")
 
 	// Parse configuration
 	var cfg config
@@ -59,7 +58,17 @@ func Execute() {
 	flag.StringVar(&cfg.borgRepositories, "borg-repositories", os.Getenv("BORG_REPOSITORIES"), "comma-separated list of borg repositories")
 	flag.StringVar(&cfg.borgPath, "borg-path", app.getEnv("BORG_PATH", "borg"), "path to the borg binary (default borg)")
 	flag.StringVar(&cfg.logLevel, "log-level", os.Getenv("LOG_LEVEL"), "log level")
+
+	var version bool
+	flag.BoolVar(&version, "version", false, "prints the version")
 	flag.Parse()
+
+	if version {
+		fmt.Println(Version)
+		os.Exit(0)
+	}
+
+	app.logger.Info("Starting borg-exporter")
 	app.config = &cfg
 
 	if cfg.borgRepositories == "" {
