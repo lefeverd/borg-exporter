@@ -38,19 +38,29 @@ When using multiple repositories, each of these will be exposed for each reposit
 
 The following environment variables can be used to configure the exporter :
 
-| Name                     | Description                                                                          | Required | Default    |
-|--------------------------|--------------------------------------------------------------------------------------|----------|------------|
-| LISTEN_ADDRESS           | Address on which the server is to listen for connections                             |          | `:9099`    |
-| METRICS_PATH             | Path on which the server exposes the metrics                                         |          | `/metrics` |
-| METRICS_REFRESH_INTERVAL | Defines the frequency (interval of time) at which the exporter refreshes the metrics |          | `12h`      |
-| COMMAND_TIMEOUT          | Timeout for borg commands                                                            |          | `120s`     |
-| BORG_REPOSITORIES        | Comma-separated list of borg repositories to expose metrics for                      | `yes`    | ``         |
-| LOG_LEVEL                | Logging level (debug, info, warn, error)                                             |          | `info`     |
+| Name                     | Description                                                                                            | Required | Default    |
+|--------------------------|--------------------------------------------------------------------------------------------------------|----------|------------|
+| LISTEN_ADDRESS           | Address on which the server is to listen for connections                                               |          | `:9099`    |
+| METRICS_PATH             | Path on which the server exposes the metrics                                                           |          | `/metrics` |
+| METRICS_REFRESH_INTERVAL | Defines the frequency (interval of time) at which the exporter refreshes the metrics                   |          | `12h`      |
+| SCHEDULER_CHECK_INTERVAL | Defines the frequency (interval of time) at which the scheduler checks if metrics need to be refreshed |          | `20s`      |
+| COMMAND_TIMEOUT          | Timeout for borg commands                                                                              |          | `120s`     |
+| BORG_REPOSITORIES        | Comma-separated list of borg repositories to expose metrics for                                        | `yes`    | ``         |
+| BORG_PATH                | Path to the borg binary                                                                                |          | `borg`     |
+| LOG_LEVEL                | Logging level (debug, info, warn, error)                                                               |          | `info`     |
+
+We decided to decouple the metrics collection from the Prometheus `scrape_interval`, as collecting metrics can take some
+time,
+especially when using multiple repositories.  
+That way, when Prometheus scrapes, we don't need to compute anything, just offer the latest "cached" metrics.
 
 The `METRICS_REFRESH_INTERVAL` is by default set to a value of `12h`, but you can tweak it depending on your
-requirement,
-for instance depending on the frequency of your backups.  
-This value is optimized for daily backups, for which metrics won't change frequently.
+requirement, for instance depending on the frequency of your backups.  
+This value is optimized for daily backups, for which metrics won't change frequently.  
+To try to run it at that interval even if the computer sleeps/wakes up, the internal scheduler will regularly check if
+it's time to
+refresh.  
+By default, this happens every 20 seconds, but you can tweak it with `SCHEDULER_CHECK_INTERVAL`.
 
 When using multiple repositories in `BORG_REPOSITORIES`, the exporter will not crash if it cannot retrieve metrics for
 one of them, but instead an error will be logged.  
@@ -60,7 +70,7 @@ This is to allow collecting metrics for the other repositories.
 
 You can install it by downloading the latest version and placing it in `/usr/local/bin/borg-exporter`.  
 Depending on your OS, you can then create a service to run it.  
-For instance, using systemd :
+For instance, using systemd, you can create `/etc/systemd/system/borg-exporter.service` :
 
 ```
 [Unit]
@@ -74,27 +84,34 @@ Environment="BORG_REPOSITORIES=ssh://my-repository/backups/my-machine,ssh://my-o
 Restart=always
 RestartSec=10
 
-# Security hardening
-NoNewPrivileges=true
-ProtectSystem=strict
-ProtectHome=read-only
-PrivateTmp=true
-PrivateDevices=true
-ProtectKernelTunables=true
-ProtectKernelModules=true
-ProtectControlGroups=true
-RestrictAddressFamilies=AF_INET AF_INET6
-RestrictNamespaces=true
-
 [Install]
 WantedBy=multi-user.target
 ```
+
+Then reload the systemd-daemon :
+
+`sudo systemctl daemon-reload`
+
+Then enable and start the service :
+
+```
+sudo systemctl enable borg-exporter.service
+sudo systemctl start borg-exporter.service
+```
+
+You can check the logs with :
+
+`sudo journalctl -fu borg-exporter`
+
+If everything is correctly started, you should be able to check the metrics (after the initial collection which can
+take a few minutes) :
+
+`curl 127.0.0.1:9099/metrics`
 
 ### User considerations
 
 The exporter should run with a user having access to the borg repositories, typically the user executing the
 borg backups.
-
 
 ### Prometheus
 

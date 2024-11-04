@@ -26,7 +26,7 @@ func (app *Application) Collect() []error {
 		app.metricsCache.Collecting = false
 	}()
 
-	startTime := time.Now()
+	totalStartTime := time.Now()
 
 	// Reset the metrics
 	app.metricsCache.Metrics.LastBackupDuration.Reset()
@@ -57,12 +57,13 @@ func (app *Application) Collect() []error {
 
 	var errs []error
 	for _, borgRepository := range app.borgRepositories {
+		startTime := time.Now()
 		app.logger.Debug("Collecting metrics", "repository", borgRepository)
-		cmd := exec.CommandContext(ctx, "borg", "info", "--last", "1", "--json", borgRepository)
+		cmd := exec.CommandContext(ctx, app.config.borgPath, "info", "--last", "1", "--json", borgRepository)
 		output, err := cmd.Output()
 		app.metricsCache.Metrics.LastCollectDuration.WithLabelValues(borgRepository).Set(time.Since(startTime).Seconds())
 		app.metricsCache.Metrics.LastCollectTimestamp.WithLabelValues(borgRepository).Set(float64(time.Now().Unix()))
-		app.logger.Debug("Collecting metrics", "repository", borgRepository, "duration", time.Since(startTime), "error", err)
+		app.logger.Debug("Collecting metrics done", "repository", borgRepository, "duration", time.Since(startTime), "error", err)
 
 		if err != nil {
 			app.metricsCache.Metrics.LastCollectError.WithLabelValues(borgRepository).Set(1)
@@ -142,5 +143,7 @@ func (app *Application) Collect() []error {
 		app.metricsCache.Metrics.LastCollectError.WithLabelValues(borgRepository).Set(0)
 		app.metricsCache.LastUpdate = time.Now()
 	}
+
+	app.logger.Debug("Collecting metrics done for all repositories", "duration", time.Since(totalStartTime).Seconds())
 	return errs
 }

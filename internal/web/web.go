@@ -21,8 +21,10 @@ type config struct {
 	listenAddress          string
 	metricsPath            string
 	metricsRefreshInterval time.Duration
+	schedulerCheckInterval time.Duration
 	commandTimeout         time.Duration
 	borgRepositories       string
+	borgPath               string
 	logLevel               string
 }
 
@@ -52,8 +54,10 @@ func Execute() {
 	flag.StringVar(&cfg.listenAddress, "listen-address", app.getEnv("LISTEN_ADDRESS", ":9099"), "http service address")
 	flag.StringVar(&cfg.metricsPath, "metrics-path", app.getEnv("METRICS_PATH", "/metrics"), "metrics endpoint path")
 	flag.DurationVar(&cfg.metricsRefreshInterval, "metrics-refresh-interval", app.getDurationEnv("METRICS_REFRESH_INTERVAL", 12*time.Hour), "metrics refresh interval (default 12h)")
+	flag.DurationVar(&cfg.schedulerCheckInterval, "scheduler-check-interval", app.getDurationEnv("SCHEDULER_CHECK_INTERVAL", 20*time.Second), "scheduler check interval (default 20s)")
 	flag.DurationVar(&cfg.commandTimeout, "command-timeout", app.getDurationEnv("COMMAND_TIMEOUT", 120*time.Second), "borg command timeout (default 120s)")
 	flag.StringVar(&cfg.borgRepositories, "borg-repositories", os.Getenv("BORG_REPOSITORIES"), "comma-separated list of borg repositories")
+	flag.StringVar(&cfg.borgPath, "borg-path", app.getEnv("BORG_PATH", "borg"), "path to the borg binary (default borg)")
 	flag.StringVar(&cfg.logLevel, "log-level", os.Getenv("LOG_LEVEL"), "log level")
 	flag.Parse()
 	app.config = &cfg
@@ -76,20 +80,13 @@ func Execute() {
 	reg := prometheus.NewRegistry()
 	app.metricsCache.Metrics.Register(reg)
 
-	app.logger.Info("Starting initial collection")
+	// Trigger an initial metrics collection before starting the web server
+	app.logger.Info("Starting initial metrics collection")
 	app.CollectWrapper()
-	app.logger.Info("Initial collection done")
+	app.logger.Info("Initial metrics collection done")
 
-	// Run the collection every refresh interval
-	ticker := time.NewTicker(app.config.metricsRefreshInterval)
-	defer ticker.Stop()
-
-	go func() {
-		for range ticker.C {
-			app.logger.Info("Refreshing metrics")
-			app.CollectWrapper()
-		}
-	}()
+	app.logger.Info("Start metrics collection routine", "refresh interval", app.config.metricsRefreshInterval.String())
+	go app.CollectLoop()
 
 	// Create our endpoints and start the web server
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
@@ -148,6 +145,22 @@ func (app *Application) getBorgVersion() string {
 		return ""
 	}
 	return strings.TrimSpace(string(output))
+}
+
+// CollectLoop executes the metrics collection at every refresh interval.
+func (app *Application) CollectLoop() {
+	opts := NewTaskSchedulerOpts()
+	opts.CheckInterval = app.config.schedulerCheckInterval
+	scheduler := NewTaskScheduler(app.config.metricsRefreshInterval, opts)
+	for {
+		if scheduler.ShouldRun() {
+			app.logger.Info("Refreshing metrics")
+			app.CollectWrapper()
+			app.logger.Info("Refreshing metrics done")
+			scheduler.UpdateLastRun()
+		}
+		scheduler.WaitForNextRun()
+	}
 }
 
 // CollectWrapper wraps the Collect method and logs any errors
