@@ -129,3 +129,13 @@ To scrape the metrics from Prometheus, you can add a scrape configuration, for i
 We set the `scrape_interval` to `3m`, as the exporter will by default only refresh them every 12 hours,
 but you can tweak this value depending on your requirements.  
 The advice is to keep it under `5m`, after which metrics are considered staled by Prometheus.
+
+## Release
+
+The application follows semantic versioning.  
+For now, releases are done manually by creating a version tag :
+
+```
+git tag vx.y.z
+git push origin vx.y.z
+```
