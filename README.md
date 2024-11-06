@@ -42,7 +42,7 @@ The following environment variables can be used to configure the exporter :
 |--------------------------|--------------------------------------------------------------------------------------------------------|----------|------------|
 | LISTEN_ADDRESS           | Address on which the server is to listen for connections                                               |          | `:9099`    |
 | METRICS_PATH             | Path on which the server exposes the metrics                                                           |          | `/metrics` |
-| METRICS_REFRESH_INTERVAL | Defines the frequency (interval of time) at which the exporter refreshes the metrics                   |          | `12h`      |
+| METRICS_REFRESH_INTERVAL | Defines the frequency (interval of time) at which the exporter refreshes the metrics                   |          | `4h`       |
 | SCHEDULER_CHECK_INTERVAL | Defines the frequency (interval of time) at which the scheduler checks if metrics need to be refreshed |          | `20s`      |
 | COMMAND_TIMEOUT          | Timeout for borg commands                                                                              |          | `120s`     |
 | BORG_REPOSITORIES        | Comma-separated list of borg repositories to expose metrics for                                        | `yes`    | ``         |

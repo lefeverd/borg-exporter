@@ -52,7 +52,7 @@ func Execute(Version string) {
 	var cfg config
 	flag.StringVar(&cfg.listenAddress, "listen-address", app.getEnv("LISTEN_ADDRESS", ":9099"), "http service address")
 	flag.StringVar(&cfg.metricsPath, "metrics-path", app.getEnv("METRICS_PATH", "/metrics"), "metrics endpoint path")
-	flag.DurationVar(&cfg.metricsRefreshInterval, "metrics-refresh-interval", app.getDurationEnv("METRICS_REFRESH_INTERVAL", 12*time.Hour), "metrics refresh interval (default 12h)")
+	flag.DurationVar(&cfg.metricsRefreshInterval, "metrics-refresh-interval", app.getDurationEnv("METRICS_REFRESH_INTERVAL", 4*time.Hour), "metrics refresh interval (default 4h)")
 	flag.DurationVar(&cfg.schedulerCheckInterval, "scheduler-check-interval", app.getDurationEnv("SCHEDULER_CHECK_INTERVAL", 20*time.Second), "scheduler check interval (default 20s)")
 	flag.DurationVar(&cfg.commandTimeout, "command-timeout", app.getDurationEnv("COMMAND_TIMEOUT", 120*time.Second), "borg command timeout (default 120s)")
 	flag.StringVar(&cfg.borgRepositories, "borg-repositories", os.Getenv("BORG_REPOSITORIES"), "comma-separated list of borg repositories")
