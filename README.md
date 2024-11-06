@@ -130,6 +130,14 @@ We set the `scrape_interval` to `3m`, as the exporter will by default only refre
 but you can tweak this value depending on your requirements.  
 The advice is to keep it under `5m`, after which metrics are considered staled by Prometheus.
 
+### Grafana dashboard
+
+You can import the dashboard(s) from [the dashboards directory](./dashboards) in Grafana.  
+The dashboard shows a top row with the age of the most recent backup for each repository, under which you can
+see details for each repository.
+
+![Grafana Dashboard](./dashboards/grafana-borg-dashboard.png)
+
 ## Release
 
 The application follows semantic versioning.  
