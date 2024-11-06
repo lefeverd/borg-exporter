@@ -18,7 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 49,
+  "id": 48,
   "links": [],
   "panels": [
     {
@@ -1326,8 +1326,8 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "Borg Copy",
-  "uid": "ce35p23uq94aof",
-  "version": 3,
+  "title": "Borg",
+  "uid": "be2qvzcxrzh1ca",
+  "version": 32,
   "weekStart": ""
 }
