@@ -141,9 +141,15 @@ see details for each repository.
 ## Release
 
 The application follows semantic versioning.  
-For now, releases are done manually by creating a version tag :
+You can execute a release with :
 
-```
-git tag vx.y.z
-git push origin vx.y.z
-```
+`make release`
+
+which will, by default, create a new `minor` version tag and push it.  
+The release pipeline will thus be triggered.
+
+You can release a new patch or major version with :
+
+`./release.sh <major|minor|patch>`
+
+You can dry-run the result (showing the tag that would be created) with the `--dry-run` flag.

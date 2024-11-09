@@ -18,3 +18,7 @@ clean:
 .PHONY: package
 package:
 	tar -czvf $(BUILD_DIR)/$(APP_NAME)-$(VERSION)-linux-amd64.tar.gz -C $(BUILD_DIR) $(APP_NAME)
+
+.PHONY: release
+release:
+	./release.sh --dry-run
