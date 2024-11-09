@@ -21,4 +21,4 @@ package:
 
 .PHONY: release
 release:
-	./release.sh --dry-run
+	./release.sh
