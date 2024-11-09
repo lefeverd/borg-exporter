@@ -31,7 +31,7 @@ func NewTaskScheduler(interval time.Duration, opts *TaskSchedulerOpts) *TaskSche
 	return &TaskScheduler{
 		interval:      interval,
 		checkInterval: opts.CheckInterval,
-		lastRun:       opts.TimeProvider(),
+		lastRun:       opts.TimeProvider().Round(0), // We round it to remove the monotonic part, see comments below
 		now:           opts.TimeProvider,
 	}
 }
@@ -42,13 +42,18 @@ func (ts *TaskScheduler) ShouldRun() bool {
 }
 
 func (ts *TaskScheduler) UpdateLastRun() {
-	ts.lastRun = ts.now()
+	// We round it to remove the monotonic part, which causes issues when the computer goes to sleep then wakes up.
+	// See comment in WaitForNextRun
+	ts.lastRun = ts.now().Round(0)
 }
 
 func (ts *TaskScheduler) WaitForNextRun() {
 	for {
 		now := ts.now()
-		nextRun := ts.lastRun.Add(ts.interval)
+		// We round it to remove the monotonic part, which causes issues when the computer goes to sleep then wakes up.
+		// Indeed, it retained an old, pre-sleep monotonic component that no longer matches the current system time.
+		// By stripping next's monotonic component, we only compare the wall-clock time.
+		nextRun := ts.lastRun.Add(ts.interval).Round(0)
 
 		if now.After(nextRun) || now.Equal(nextRun) {
 			return
