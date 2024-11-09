@@ -21,4 +21,4 @@ package:
 
 .PHONY: release
 release:
-	./release.sh
+	./release.sh minor
