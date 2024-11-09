@@ -68,7 +68,7 @@ func Execute(Version string) {
 		os.Exit(0)
 	}
 
-	app.logger.Info("Starting borg-exporter")
+	app.logger.Info("Starting borg-exporter", "version", Version)
 	app.config = &cfg
 
 	if cfg.borgRepositories == "" {
