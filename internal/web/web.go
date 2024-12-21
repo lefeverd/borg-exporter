@@ -174,17 +174,40 @@ func (app *Application) CollectLoop() {
 
 // CollectWrapper wraps the Collect method and logs any errors
 func (app *Application) CollectWrapper() {
-	errs := app.Collect()
-	if len(errs) != 0 {
+	const maxRetries = 5
+	var attempt int
+
+	for {
+		errs := app.Collect()
+		if len(errs) == 0 {
+			return
+		}
+
+		// Log errors
 		app.logger.Error("Collection failed with the following error(s):")
 		for _, err := range errs {
 			var repositoryCollectionError *RepositoryCollectionError
 			if errors.As(err, &repositoryCollectionError) {
 				app.logger.Error(repositoryCollectionError.Msg, "repository", repositoryCollectionError.Repository, "error", repositoryCollectionError.Err, "stdErr", repositoryCollectionError.StdErr)
 				continue
+			} else {
+				app.logger.Error(err.Error())
 			}
-
-			app.logger.Error(err.Error())
 		}
+
+		// Not useful to retry if the refresh interval is smaller than 5 minutes
+		if app.config.metricsRefreshInterval < 5*time.Minute {
+			app.logger.Info("Metrics refresh interval is too short for retries, aborting and waiting for next refresh.")
+			return
+		}
+
+		// Check retry limit
+		if attempt >= maxRetries {
+			app.logger.Error("Max retry limit reached for this cycle, aborting collection and waiting for next refresh.")
+			return
+		}
+
+		time.Sleep(1 * time.Minute)
+		attempt++
 	}
 }

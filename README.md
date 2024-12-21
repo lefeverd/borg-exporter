@@ -63,6 +63,10 @@ By default, this happens every 20 seconds, but you can tweak it with `SCHEDULER_
 
 When using multiple repositories in `BORG_REPOSITORIES`, the exporter will not crash if it cannot retrieve metrics for
 one of them, but instead an error will be logged.  
+This is useful to already expose the metrics that it was able to gather.  
+In case of errors, if the `METRICS_REFRESH_INTERVAL` is greater than 5 minutes, 
+it will retry 5 times, waiting one minute between each try, before stopping and waiting for the next refresh.  
+This is to avoid potentially waiting for hours in case of a transient error.
 
 ## Installation
 
