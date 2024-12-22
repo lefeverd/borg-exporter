@@ -207,6 +207,7 @@ func (app *Application) CollectWrapper() {
 			return
 		}
 
+		app.logger.Info("Retrying in a minute")
 		time.Sleep(1 * time.Minute)
 		attempt++
 	}
