@@ -59,7 +59,12 @@ func (app *Application) Collect() []error {
 	for _, borgRepository := range app.borgRepositories {
 		startTime := time.Now()
 		app.logger.Debug("Collecting metrics", "repository", borgRepository)
-		cmd := exec.CommandContext(ctx, app.config.borgPath, "info", "--last", "1", "--json", borgRepository)
+		var args []string
+		if app.config.borgOpts != "" {
+			args = append(args, app.config.borgOpts)
+		}
+		args = append(args, "info", "--last", "1", "--json", borgRepository)
+		cmd := exec.CommandContext(ctx, app.config.borgPath, args...)
 		output, err := cmd.Output()
 		app.metricsCache.Metrics.LastCollectDuration.WithLabelValues(borgRepository).Set(time.Since(startTime).Seconds())
 		app.metricsCache.Metrics.LastCollectTimestamp.WithLabelValues(borgRepository).Set(float64(time.Now().Unix()))

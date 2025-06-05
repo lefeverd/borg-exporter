@@ -48,6 +48,7 @@ When using multiple repositories, each of these will be exposed for each reposit
 | `COMMAND_TIMEOUT`          | `-command-timeout`          | Timeout for borg commands                                                                              |          | `120s`     |
 | `BORG_REPOSITORIES`        | `-borg-repositories`        | Comma-separated list of borg repositories to expose metrics for                                        | `yes`    | ``         |
 | `BORG_PATH`                | `-borg-path`                | Path to the borg binary                                                                                |          | `borg`     |
+| `BORG_OPTS`                | `-borg-optd`                | Options passed to borg                                                                                 |          | `borg`     |
 | `LOG_LEVEL`                | `-log-level`                | Logging level (debug, info, warn, error)                                                               |          | `info`     |
 
 We decided to decouple the metrics collection from the Prometheus `scrape_interval`, as collecting metrics can take some

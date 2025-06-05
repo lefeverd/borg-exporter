@@ -26,6 +26,7 @@ type config struct {
 	commandTimeout         time.Duration
 	borgRepositories       string
 	borgPath               string
+	borgOpts               string
 	logLevel               string
 }
 
@@ -57,6 +58,7 @@ func Execute(Version string) {
 	flag.DurationVar(&cfg.commandTimeout, "command-timeout", app.getDurationEnv("COMMAND_TIMEOUT", 120*time.Second), "borg command timeout (default 120s)")
 	flag.StringVar(&cfg.borgRepositories, "borg-repositories", os.Getenv("BORG_REPOSITORIES"), "comma-separated list of borg repositories")
 	flag.StringVar(&cfg.borgPath, "borg-path", app.getEnv("BORG_PATH", "borg"), "path to the borg binary (default borg)")
+	flag.StringVar(&cfg.borgOpts, "borg-opts", app.getEnv("BORG_OPTS", ""), "borg options")
 	flag.StringVar(&cfg.logLevel, "log-level", os.Getenv("LOG_LEVEL"), "log level")
 
 	var version bool
