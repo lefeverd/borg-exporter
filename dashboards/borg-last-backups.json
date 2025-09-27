@@ -22,10 +22,7 @@
   "links": [],
   "panels": [
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
+      "datasource": "${datasource}",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -85,10 +82,7 @@
       "repeatDirection": "h",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
+          "datasource": "${datasource}",
           "editorMode": "code",
           "exemplar": false,
           "expr": "time() - last_over_time(borg_last_backup_timestamp{repository=~\"^$repository$\"}[7d])",
@@ -177,10 +171,7 @@
       "pluginVersion": "11.2.0",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
+          "datasource": "${datasource}",
           "editorMode": "code",
           "exemplar": false,
           "expr": "time() - last_over_time(borg_last_backup_timestamp{repository=~\"$repository\"}[7d])",
@@ -276,10 +267,7 @@
       },
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
+          "datasource": "${datasource}",
           "editorMode": "code",
           "expr": "borg_last_backup_deduplicated_size_bytes{repository=~\"^$repository$\"}",
           "instant": false,
@@ -370,10 +358,7 @@
       },
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
+          "datasource": "${datasource}",
           "editorMode": "code",
           "expr": "borg_last_backup_original_size_bytes{repository=~\"^$repository$\"}",
           "instant": false,
@@ -467,10 +452,7 @@
       },
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
+          "datasource": "${datasource}",
           "editorMode": "code",
           "expr": " avg(borg_last_backup_files{repository=~\"^$repository$\"})",
           "instant": false,
@@ -568,10 +550,7 @@
       },
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
+          "datasource": "${datasource}",
           "editorMode": "code",
           "expr": "borg_last_backup_compressed_size_bytes{repository=~\"^$repository$\"}",
           "instant": false,
@@ -634,10 +613,7 @@
       "pluginVersion": "11.2.0",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
+          "datasource": "${datasource}",
           "editorMode": "code",
           "expr": "borg_last_backup_timestamp{repository=~\"^$repository$\"}*1000",
           "instant": false,
@@ -732,10 +708,7 @@
       },
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
+          "datasource": "${datasource}",
           "editorMode": "code",
           "expr": "borg_deduplicated_compressed_size_bytes{repository=~\"^$repository$\"}",
           "instant": false,
@@ -830,10 +803,7 @@
       },
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
+          "datasource": "${datasource}",
           "editorMode": "code",
           "expr": "borg_total_size_bytes{repository=~\"^$repository$\"}",
           "instant": false,
@@ -928,10 +898,7 @@
       },
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
+          "datasource": "${datasource}",
           "editorMode": "code",
           "expr": "borg_last_backup_duration_seconds{repository=~\"^$repository$\"}",
           "instant": false,
@@ -1026,10 +993,7 @@
       },
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
+          "datasource": "${datasource}",
           "editorMode": "code",
           "expr": "borg_total_compressed_size_bytes{repository=~\"^$repository$\"}",
           "instant": false,
@@ -1098,10 +1062,7 @@
       "pluginVersion": "11.2.0",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
+          "datasource": "${datasource}",
           "editorMode": "code",
           "exemplar": false,
           "expr": "time() - last_over_time(borg_last_collect_timestamp{repository=~\"^$repository$\"}[7d])",
@@ -1168,10 +1129,7 @@
       "pluginVersion": "11.2.0",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
+          "datasource": "${datasource}",
           "editorMode": "code",
           "expr": "borg_last_collect_error{repository=~\"^$repository$\"}",
           "instant": false,
@@ -1267,10 +1225,7 @@
       },
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
+          "datasource": "${datasource}",
           "editorMode": "code",
           "expr": "borg_last_collect_duration_seconds{repository=~\"^$repository$\"}",
           "instant": false,
@@ -1317,6 +1272,18 @@
         "skipUrlSync": false,
         "sort": 0,
         "type": "query"
+      },
+      {
+        "name": "datasource",
+        "type": "datasource",
+        "pluginId": "prometheus",
+        "query": "prometheus",
+        "current": {
+          "text": "prometheus",
+          "value": "prometheus"
+        },
+        "includeAll": false,
+        "multi": false
       }
     ]
   },
