@@ -50,43 +50,43 @@
           "refId": "RAW_SIZE",
           "expr": "borg_total_size_bytes",
           "format": "table",
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }
+          "datasource": "${DS_PROMETHEUS}"
         },
         {
           "refId": "ACTUAL_SIZE",
           "expr": "borg_deduplicated_compressed_size_bytes",
           "format": "table",
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }
+          "datasource": "${DS_PROMETHEUS}"
         },
         {
           "refId": "LAST_BACKUP_TS",
           "expr": "borg_last_backup_timestamp * 1000",
           "format": "table",
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }
+          "datasource": "${DS_PROMETHEUS}"
         },
         {
           "refId": "LAST_BACKUP_RAW_SIZE",
           "expr": "borg_last_backup_original_size_bytes",
           "format": "table",
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }
+          "datasource": "${DS_PROMETHEUS}"
         },
         {
           "refId": "LAST_BACKUP_ACTUAL_SIZE",
           "expr": "borg_last_backup_compressed_size_bytes",
           "format": "table",
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }
+          "datasource": "${DS_PROMETHEUS}"
         },
         {
           "refId": "FILES",
           "expr": "borg_last_backup_files",
           "format": "table",
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }
+          "datasource": "${DS_PROMETHEUS}"
         },
         {
           "refId": "DURATION",
           "expr": "borg_last_backup_duration_seconds",
           "format": "table",
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }
+          "datasource": "${DS_PROMETHEUS}"
         },
         {
           "refId": "SINCE_LAST_BACKUP",
