@@ -32,11 +32,7 @@
   "links": [],
   "panels": [
     {
-      "datasource": {
-        "name": "${DS_PROMETHEUS}",
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
+      "datasource": "${DS_PROMETHEUS}",
       "title": "Summary",
       "type": "table",
       "gridPos": {
