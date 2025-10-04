@@ -214,8 +214,8 @@
                   "mode": "absolute",
                   "steps": [
                     { "color": "dark-green", "value": null },
-                    { "color": "dark-orange", "value": 86400000 },
-                    { "color": "dark-red", "value": 604800000 }
+                    { "color": "dark-orange", "value": 432000000 },
+                    { "color": "dark-red", "value": 864000000 }
                   ]
                 }
               },
