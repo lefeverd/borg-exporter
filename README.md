@@ -11,13 +11,13 @@ The following metrics are exposed :
 |--------------------------------------------|--------------------------------------------------|---------|
 | `borg_last_backup_duration_seconds`        | Duration of the last backup in seconds           | Gauge   |
 | `borg_last_backup_compressed_size_bytes`   | Compressed size of the last backup in bytes      | Gauge   |
-| `borg_last_backup_deduplicated_size_bytes` | Deduplicated size of the last backup in bytes    | Gauge   |
+| `borg_last_backup_deduplicated_size_bytes` | Deduplicated size of the last backup in bytes**  | Gauge   |
 | `borg_last_backup_files`                   | Number of files in the last backup               | Gauge   |
 | `borg_last_backup_original_size_bytes`     | Original size of the last backup in bytes        | Gauge   |
 | `borg_last_backup_timestamp`               | Timestamp of the last backup (unix epoch*)       | Gauge   |
 | `borg_archive_duration_seconds`            | Duration of the archive's backup in seconds      | Gauge   |
 | `borg_archive_compressed_size_bytes`       | Compressed size of the archive in bytes          | Gauge   |
-| `borg_archive_deduplicated_size_bytes`     | Deduplicated size of the archive in bytes        | Gauge   |
+| `borg_archive_deduplicated_size_bytes`     | Deduplicated size of the archive in bytes**      | Gauge   |
 | `borg_archive_files`                       | Number of files in the archive                   | Gauge   |
 | `borg_archive_original_size_bytes`         | Original size of the archive in bytes            | Gauge   |
 | `borg_archive_timestamp`                   | Timestamp of the archive's backup (unix epoch*)  | Gauge   |
@@ -35,7 +35,13 @@ The following metrics are exposed :
 | `borg_repository_info`                     | Information about the backup repository          | Gauge   |
 | `borg_system_info`                         | Information about the borg backup system         | Gauge   |
 
-\* number of seconds that have elapsed since January 1, 1970
+\* number of seconds that have elapsed since January 1, 1970  
+\*\* this is *not* "the size of this backup after deduplication". Borg computes it as the data
+that is exclusively owned by this one archive relative to the repository's current state (i.e.
+what would be freed if you deleted just this archive) — it is order-dependent and can read `0`
+for a large, valid backup if its content duplicates another archive already in the repository, and
+can change for an older archive once newer archives are created. See the
+[borg documentation](https://borgbackup.readthedocs.io/en/stable/usage/info.html) for details.
 
 Each of these metrics are in reality "labeled" metrics, such as `GaugeVec` and `CounterVec`, grouped (or labeled) by
 `repository`.  
@@ -148,9 +154,9 @@ The advice is to keep it under `5m`, after which metrics are considered staled b
 ### Grafana dashboard
 
 You can import the dashboard(s) from [the dashboards directory](./dashboards) in Grafana.  
-The dashboard shows a top row with the age of the most recent backup for each repository, under which you can
-see details for each repository, including an archive history table showing size, file count and duration for
-the last `N` archives (see `ARCHIVE_HISTORY_LIMIT`).
+The dashboard shows a summary table across all repositories, under which you can see details for each
+repository: an archive history table and size/files/duration bar charts for the last `N` archives (see
+`ARCHIVE_HISTORY_LIMIT`), and exporter collection health.
 
 ![Grafana Dashboard](./dashboards/grafana-borg-dashboard.png)
 
