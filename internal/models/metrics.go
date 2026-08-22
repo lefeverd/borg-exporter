@@ -1,18 +1,27 @@
 package models
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
 	"os"
+
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 type BorgMetrics struct {
-	// archive metrics
+	// last archive metrics
 	LastBackupDuration         *prometheus.GaugeVec
 	LastBackupCompressedSize   *prometheus.GaugeVec
 	LastBackupDeduplicatedSize *prometheus.GaugeVec
 	LastBackupFiles            *prometheus.GaugeVec
 	LastBackupOriginalSize     *prometheus.GaugeVec
 	LastBackupTimestamp        *prometheus.GaugeVec
+
+	// per-archive metrics, for the last N archives (see ArchiveHistoryLimit)
+	ArchiveDuration         *prometheus.GaugeVec
+	ArchiveCompressedSize   *prometheus.GaugeVec
+	ArchiveDeduplicatedSize *prometheus.GaugeVec
+	ArchiveFiles            *prometheus.GaugeVec
+	ArchiveOriginalSize     *prometheus.GaugeVec
+	ArchiveTimestamp        *prometheus.GaugeVec
 
 	// repository metrics (from borg info cache stats)
 	TotalChunks                *prometheus.GaugeVec
@@ -67,6 +76,32 @@ func NewBorgMetrics(borgVersion string) *BorgMetrics {
 			Name: "borg_last_backup_timestamp",
 			Help: "Timestamp of the last backup",
 		}, []string{"repository"}),
+
+		// per-archive metrics
+		ArchiveDuration: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Name: "borg_archive_duration_seconds",
+			Help: "Duration of the archive's backup in seconds",
+		}, []string{"repository", "archive"}),
+		ArchiveCompressedSize: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Name: "borg_archive_compressed_size_bytes",
+			Help: "Compressed size of the archive in bytes",
+		}, []string{"repository", "archive"}),
+		ArchiveDeduplicatedSize: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Name: "borg_archive_deduplicated_size_bytes",
+			Help: "Deduplicated size of the archive in bytes",
+		}, []string{"repository", "archive"}),
+		ArchiveFiles: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Name: "borg_archive_files",
+			Help: "Number of files in the archive",
+		}, []string{"repository", "archive"}),
+		ArchiveOriginalSize: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Name: "borg_archive_original_size_bytes",
+			Help: "Original size of the archive in bytes",
+		}, []string{"repository", "archive"}),
+		ArchiveTimestamp: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Name: "borg_archive_timestamp",
+			Help: "Timestamp of the archive's backup",
+		}, []string{"repository", "archive"}),
 
 		// repository metrics
 		TotalChunks: prometheus.NewGaugeVec(prometheus.GaugeOpts{
@@ -156,6 +191,14 @@ func (m *BorgMetrics) Register(registry *prometheus.Registry) {
 	registry.MustRegister(m.LastBackupFiles)
 	registry.MustRegister(m.LastBackupOriginalSize)
 	registry.MustRegister(m.LastBackupTimestamp)
+
+	// per-archive metrics
+	registry.MustRegister(m.ArchiveDuration)
+	registry.MustRegister(m.ArchiveCompressedSize)
+	registry.MustRegister(m.ArchiveDeduplicatedSize)
+	registry.MustRegister(m.ArchiveFiles)
+	registry.MustRegister(m.ArchiveOriginalSize)
+	registry.MustRegister(m.ArchiveTimestamp)
 
 	// repository metrics
 	registry.MustRegister(m.TotalChunks)

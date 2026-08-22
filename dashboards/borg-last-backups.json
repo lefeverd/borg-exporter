@@ -1401,6 +1401,153 @@
       ],
       "title": "Last collection duration",
       "type": "timeseries"
+    },
+    {
+      "datasource": "${DS_PROMETHEUS}",
+      "title": "Archive history",
+      "description": "Size, file count and duration for the last N archives of this repository (see ARCHIVE_HISTORY_LIMIT), including archives that predate the exporter tracking this repository.",
+      "type": "table",
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 32
+      },
+      "id": 78,
+      "targets": [
+        {
+          "refId": "TIMESTAMP",
+          "expr": "borg_archive_timestamp{repository=~\"^$repository$\"} * 1000",
+          "format": "table",
+          "datasource": "${DS_PROMETHEUS}"
+        },
+        {
+          "refId": "DURATION",
+          "expr": "borg_archive_duration_seconds{repository=~\"^$repository$\"}",
+          "format": "table",
+          "datasource": "${DS_PROMETHEUS}"
+        },
+        {
+          "refId": "FILES",
+          "expr": "borg_archive_files{repository=~\"^$repository$\"}",
+          "format": "table",
+          "datasource": "${DS_PROMETHEUS}"
+        },
+        {
+          "refId": "ORIGINAL_SIZE",
+          "expr": "borg_archive_original_size_bytes{repository=~\"^$repository$\"}",
+          "format": "table",
+          "datasource": "${DS_PROMETHEUS}"
+        },
+        {
+          "refId": "COMPRESSED_SIZE",
+          "expr": "borg_archive_compressed_size_bytes{repository=~\"^$repository$\"}",
+          "format": "table",
+          "datasource": "${DS_PROMETHEUS}"
+        },
+        {
+          "refId": "DEDUPLICATED_SIZE",
+          "expr": "borg_archive_deduplicated_size_bytes{repository=~\"^$repository$\"}",
+          "format": "table",
+          "datasource": "${DS_PROMETHEUS}"
+        }
+      ],
+      "transformations": [
+        { "id": "merge", "options": {} },
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "config": {
+                  "id": "isNotNull",
+                  "options": {}
+                },
+                "fieldName": "archive"
+              }
+            ],
+            "match": "any",
+            "type": "include"
+          }
+        },
+        {
+          "id": "groupBy",
+          "options": {
+            "fields": {
+              "repository": { "aggregations": [], "operation": "groupby" },
+              "archive": { "aggregations": [], "operation": "groupby" },
+              "Value #TIMESTAMP": { "aggregations": ["lastNotNull"], "operation": "aggregate" },
+              "Value #DURATION": { "aggregations": ["lastNotNull"], "operation": "aggregate" },
+              "Value #FILES": { "aggregations": ["lastNotNull"], "operation": "aggregate" },
+              "Value #ORIGINAL_SIZE": { "aggregations": ["lastNotNull"], "operation": "aggregate" },
+              "Value #COMPRESSED_SIZE": { "aggregations": ["lastNotNull"], "operation": "aggregate" },
+              "Value #DEDUPLICATED_SIZE": { "aggregations": ["lastNotNull"], "operation": "aggregate" }
+            }
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": { "repository": true },
+            "indexByName": {
+              "archive": 0,
+              "Value #TIMESTAMP (lastNotNull)": 1,
+              "Value #DURATION (lastNotNull)": 2,
+              "Value #FILES (lastNotNull)": 3,
+              "Value #ORIGINAL_SIZE (lastNotNull)": 4,
+              "Value #COMPRESSED_SIZE (lastNotNull)": 5,
+              "Value #DEDUPLICATED_SIZE (lastNotNull)": 6
+            },
+            "renameByName": {
+              "archive": "Archive",
+              "Value #TIMESTAMP (lastNotNull)": "Start",
+              "Value #DURATION (lastNotNull)": "Duration",
+              "Value #FILES (lastNotNull)": "Files",
+              "Value #ORIGINAL_SIZE (lastNotNull)": "Original Size",
+              "Value #COMPRESSED_SIZE (lastNotNull)": "Compressed Size",
+              "Value #DEDUPLICATED_SIZE (lastNotNull)": "Deduplicated Size"
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [{ "field": "Start", "desc": true }]
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": { "type": "auto" }
+          },
+          "mappings": []
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Start" },
+            "properties": [{ "id": "unit", "value": "dateTimeAsSystem" }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Duration" },
+            "properties": [{ "id": "unit", "value": "dtdurations" }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Original Size" },
+            "properties": [{ "id": "unit", "value": "decbytes" }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Compressed Size" },
+            "properties": [{ "id": "unit", "value": "decbytes" }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Deduplicated Size" },
+            "properties": [{ "id": "unit", "value": "decbytes" }]
+          }
+        ]
+      }
     }
   ],
   "schemaVersion": 39,

@@ -4,7 +4,11 @@ import (
 	"context"
 	"errors"
 	"os/exec"
+	"strconv"
 	"time"
+
+	"github.com/lefeverd/borg-exporter/internal/models"
+	"github.com/lefeverd/borg-exporter/internal/parser"
 )
 
 // Collect collects the metrics from borg and refreshes them in the cache.
@@ -36,6 +40,13 @@ func (app *Application) Collect() []error {
 	app.metricsCache.Metrics.LastBackupOriginalSize.Reset()
 	app.metricsCache.Metrics.LastBackupTimestamp.Reset()
 
+	app.metricsCache.Metrics.ArchiveDuration.Reset()
+	app.metricsCache.Metrics.ArchiveCompressedSize.Reset()
+	app.metricsCache.Metrics.ArchiveDeduplicatedSize.Reset()
+	app.metricsCache.Metrics.ArchiveFiles.Reset()
+	app.metricsCache.Metrics.ArchiveOriginalSize.Reset()
+	app.metricsCache.Metrics.ArchiveTimestamp.Reset()
+
 	app.metricsCache.Metrics.TotalChunks.Reset()
 	app.metricsCache.Metrics.TotalCompressedSize.Reset()
 	app.metricsCache.Metrics.TotalSize.Reset()
@@ -63,7 +74,7 @@ func (app *Application) Collect() []error {
 		if app.config.borgOpts != "" {
 			args = append(args, app.config.borgOpts)
 		}
-		args = append(args, "info", "--last", "1", "--json", borgRepository)
+		args = append(args, "info", "--last", strconv.Itoa(app.config.archiveHistoryLimit), "--json", borgRepository)
 		cmd := exec.CommandContext(ctx, app.config.borgPath, args...)
 		output, err := cmd.Output()
 		app.metricsCache.Metrics.LastCollectDuration.WithLabelValues(borgRepository).Set(time.Since(startTime).Seconds())
@@ -107,6 +118,8 @@ func (app *Application) Collect() []error {
 		// Update metrics
 		if len(info.Archives) > 0 {
 			// Set archive metrics
+			// borg info --last N returns archives oldest-first (verified on borg 1.4.4),
+			// so the last element is always the most recent.
 			latest := info.Archives[len(info.Archives)-1]
 
 			app.metricsCache.Metrics.LastBackupDuration.WithLabelValues(borgRepository).Set(latest.Duration)
@@ -127,6 +140,8 @@ func (app *Application) Collect() []error {
 				latest.Name,
 				latest.Username,
 			).Set(1)
+
+			setArchiveMetrics(app.metricsCache.Metrics, borgRepository, info.Archives)
 		}
 
 		// Set repository metrics
@@ -151,4 +166,16 @@ func (app *Application) Collect() []error {
 
 	app.logger.Debug("Collecting metrics done for all repositories", "duration", time.Since(totalStartTime).Seconds())
 	return errs
+}
+
+// setArchiveMetrics sets the per-archive metrics for the given repository's archives.
+func setArchiveMetrics(metrics *models.BorgMetrics, repository string, archives []parser.InfoOutputArchive) {
+	for _, archive := range archives {
+		metrics.ArchiveDuration.WithLabelValues(repository, archive.Name).Set(archive.Duration)
+		metrics.ArchiveCompressedSize.WithLabelValues(repository, archive.Name).Set(float64(archive.Stats.CompressedSize))
+		metrics.ArchiveDeduplicatedSize.WithLabelValues(repository, archive.Name).Set(float64(archive.Stats.DeduplicatedSize))
+		metrics.ArchiveFiles.WithLabelValues(repository, archive.Name).Set(float64(archive.Stats.NFiles))
+		metrics.ArchiveOriginalSize.WithLabelValues(repository, archive.Name).Set(float64(archive.Stats.OriginalSize))
+		metrics.ArchiveTimestamp.WithLabelValues(repository, archive.Name).Set(float64(archive.Start.Unix()))
+	}
 }

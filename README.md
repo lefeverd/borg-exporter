@@ -15,6 +15,12 @@ The following metrics are exposed :
 | `borg_last_backup_files`                   | Number of files in the last backup               | Gauge   |
 | `borg_last_backup_original_size_bytes`     | Original size of the last backup in bytes        | Gauge   |
 | `borg_last_backup_timestamp`               | Timestamp of the last backup (unix epoch*)       | Gauge   |
+| `borg_archive_duration_seconds`            | Duration of the archive's backup in seconds      | Gauge   |
+| `borg_archive_compressed_size_bytes`       | Compressed size of the archive in bytes          | Gauge   |
+| `borg_archive_deduplicated_size_bytes`     | Deduplicated size of the archive in bytes        | Gauge   |
+| `borg_archive_files`                       | Number of files in the archive                   | Gauge   |
+| `borg_archive_original_size_bytes`         | Original size of the archive in bytes            | Gauge   |
+| `borg_archive_timestamp`                   | Timestamp of the archive's backup (unix epoch*)  | Gauge   |
 | `borg_total_chunks`                        | Repository total chunks                          | Gauge   |
 | `borg_total_compressed_size_bytes`         | Repository total compressed size                 | Gauge   |
 | `borg_total_size_bytes`                    | Repository total size                            | Gauge   |
@@ -35,6 +41,11 @@ Each of these metrics are in reality "labeled" metrics, such as `GaugeVec` and `
 `repository`.  
 When using multiple repositories, each of these will be exposed for each repository.
 
+The `borg_archive_*` metrics are additionally labeled by `archive` (the archive name), and are exposed for the
+last `N` archives of each repository, `N` being configurable via `ARCHIVE_HISTORY_LIMIT` (default 10) — see
+[Configuration](#configuration). This includes archives that predate the exporter tracking a repository, unlike
+the `borg_last_backup_*` metrics which only reflect what Prometheus has scraped over time.
+
 ## Configuration
 
 `borg-exporter` can be configured by using either flags or environment variables :
@@ -50,6 +61,7 @@ When using multiple repositories, each of these will be exposed for each reposit
 | `BORG_PATH`                | `-borg-path`                | Path to the borg binary                                                                                |          | `borg`     |
 | `BORG_OPTS`                | `-borg-optd`                | Options passed to borg                                                                                 |          | `borg`     |
 | `LOG_LEVEL`                | `-log-level`                | Logging level (debug, info, warn, error)                                                               |          | `info`     |
+| `ARCHIVE_HISTORY_LIMIT`    | `-archive-history-limit`    | Number of most recent archives to expose `borg_archive_*` per-archive metrics for                      |          | `10`       |
 
 We decided to decouple the metrics collection from the Prometheus `scrape_interval`, as collecting metrics can take some
 time, especially when using multiple repositories.  
@@ -137,7 +149,8 @@ The advice is to keep it under `5m`, after which metrics are considered staled b
 
 You can import the dashboard(s) from [the dashboards directory](./dashboards) in Grafana.  
 The dashboard shows a top row with the age of the most recent backup for each repository, under which you can
-see details for each repository.
+see details for each repository, including an archive history table showing size, file count and duration for
+the last `N` archives (see `ARCHIVE_HISTORY_LIMIT`).
 
 ![Grafana Dashboard](./dashboards/grafana-borg-dashboard.png)
 

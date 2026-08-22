@@ -14,6 +14,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -28,6 +29,7 @@ type config struct {
 	borgPath               string
 	borgOpts               string
 	logLevel               string
+	archiveHistoryLimit    int
 }
 
 type Application struct {
@@ -60,6 +62,7 @@ func Execute(Version string) {
 	flag.StringVar(&cfg.borgPath, "borg-path", app.getEnv("BORG_PATH", "borg"), "path to the borg binary (default borg)")
 	flag.StringVar(&cfg.borgOpts, "borg-opts", app.getEnv("BORG_OPTS", ""), "borg options")
 	flag.StringVar(&cfg.logLevel, "log-level", os.Getenv("LOG_LEVEL"), "log level")
+	flag.IntVar(&cfg.archiveHistoryLimit, "archive-history-limit", app.getIntEnv("ARCHIVE_HISTORY_LIMIT", 10), "number of most recent archives to expose per-archive metrics for (default 10)")
 
 	var version bool
 	flag.BoolVar(&version, "version", false, "prints the version")
@@ -78,6 +81,11 @@ func Execute(Version string) {
 		os.Exit(1)
 	}
 	app.borgRepositories = strings.Split(cfg.borgRepositories, ",")
+
+	if cfg.archiveHistoryLimit < 1 {
+		app.logger.Error("archive-history-limit must be a positive integer", "value", cfg.archiveHistoryLimit)
+		os.Exit(1)
+	}
 
 	app.setLogLevel()
 
@@ -123,6 +131,18 @@ func (app *Application) getDurationEnv(key string, fallback time.Duration) time.
 			os.Exit(1)
 		}
 		return duration
+	}
+	return fallback
+}
+
+func (app *Application) getIntEnv(key string, fallback int) int {
+	if value, ok := os.LookupEnv(key); ok {
+		i, err := strconv.Atoi(value)
+		if err != nil {
+			app.logger.Error("Cannot parse int for config item", "item", key, "error", err)
+			os.Exit(1)
+		}
+		return i
 	}
 	return fallback
 }
