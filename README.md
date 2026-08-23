@@ -245,13 +245,16 @@ The advice is to keep it under `5m`, after which metrics are considered staled b
 
 ### Grafana dashboard
 
-You can import the dashboard(s) from [the dashboards directory](./dashboards) in Grafana.  
-The dashboard shows a summary table across all repositories, under which you can see details for each
-repository: an archive history table and size/files/duration bar charts for the last `N` archives (see
-`ARCHIVE_HISTORY_LIMIT`), and exporter collection health.
+You can import the dashboard from [the dashboards directory](./dashboards) in Grafana. It's split into a Borg
+section and a Restic section, each with a summary table across that tool's repositories, under which you can
+see details for each repository: an archive history table and size/files/duration bar charts for the last `N`
+archives/snapshots (see `ARCHIVE_HISTORY_LIMIT`), and exporter collection health. The two sections use
+different fields where the tools' metrics don't map onto each other (e.g. Borg's repository-level totals and
+its full-archive compressed/deduplicated size have no restic equivalent — see [Metrics](#metrics)).
 
-The current dashboard covers Borg repositories only — restic panels are tracked separately
-([#11](https://github.com/lefeverd/backup-exporter/issues/11)).
+The dashboard file was renamed from `borg-last-backups.json` to `backup-exporter.json` now that it covers both
+tools. Grafana UI imports (keyed by the dashboard's `uid`) are unaffected, but if you provision it by file path
+(e.g. GitOps-style), update the path.
 
 ![Grafana Dashboard](./dashboards/grafana-borg-dashboard.png)
 

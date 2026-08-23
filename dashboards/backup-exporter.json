@@ -33,7 +33,7 @@
   "panels": [
     {
       "datasource": "${DS_PROMETHEUS}",
-      "title": "Summary",
+      "title": "Borg summary",
       "type": "table",
       "gridPos": {
         "h": 10,
@@ -243,18 +243,177 @@
       }
     },
     {
+      "datasource": "${DS_PROMETHEUS}",
+      "title": "Restic summary",
+      "type": "table",
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 10
+      },
+      "id": 100,
+      "targets": [
+        {
+          "refId": "LAST_BACKUP_TS",
+          "expr": "restic_last_backup_timestamp * 1000",
+          "format": "table",
+          "datasource": "${DS_PROMETHEUS}"
+        },
+        {
+          "refId": "LAST_BACKUP_ORIGINAL_SIZE",
+          "expr": "restic_last_backup_original_size_bytes",
+          "format": "table",
+          "datasource": "${DS_PROMETHEUS}"
+        },
+        {
+          "refId": "LAST_BACKUP_DATA_ADDED",
+          "expr": "restic_last_backup_data_added_bytes",
+          "format": "table",
+          "datasource": "${DS_PROMETHEUS}"
+        },
+        {
+          "refId": "FILES",
+          "expr": "restic_last_backup_files",
+          "format": "table",
+          "datasource": "${DS_PROMETHEUS}"
+        },
+        {
+          "refId": "DURATION",
+          "expr": "restic_last_backup_duration_seconds",
+          "format": "table",
+          "datasource": "${DS_PROMETHEUS}"
+        },
+        {
+          "refId": "SINCE_LAST_BACKUP",
+          "expr": "(time() * 1000) - (restic_last_backup_timestamp * 1000)",
+          "format": "table"
+        }
+      ],
+      "transformations": [
+        { "id": "merge", "options": {} },
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "config": {
+                  "id": "isNotNull",
+                  "options": {}
+                },
+                "fieldName": "repository"
+              }
+            ],
+            "match": "any",
+            "type": "include"
+          }
+        },
+        {
+          "id": "groupBy",
+          "options": {
+            "fields": {
+              "repository": { "aggregations": [], "operation": "groupby" },
+              "Value #LAST_BACKUP_ORIGINAL_SIZE": { "aggregations": ["lastNotNull"], "operation": "aggregate" },
+              "Value #LAST_BACKUP_DATA_ADDED": { "aggregations": ["lastNotNull"], "operation": "aggregate" },
+              "Value #FILES": { "aggregations": ["lastNotNull"], "operation": "aggregate" },
+              "Value #DURATION": { "aggregations": ["lastNotNull"], "operation": "aggregate" },
+              "Value #LAST_BACKUP_TS": { "aggregations": ["max"], "operation": "aggregate" },
+              "Value #SINCE_LAST_BACKUP": { "aggregations": ["lastNotNull"], "operation": "aggregate" }
+            }
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "indexByName": {
+              "repository": 0,
+              "Value #LAST_BACKUP_ORIGINAL_SIZE (lastNotNull)": 1,
+              "Value #FILES (lastNotNull)": 2,
+              "Value #LAST_BACKUP_DATA_ADDED (lastNotNull)": 3,
+              "Value #DURATION (lastNotNull)": 4,
+              "Value #LAST_BACKUP_TS (max)": 5,
+              "Value #SINCE_LAST_BACKUP (lastNotNull)": 6
+            },
+            "renameByName": {
+              "repository": "Repository",
+              "Value #LAST_BACKUP_ORIGINAL_SIZE (lastNotNull)": "Last Original Size",
+              "Value #FILES (lastNotNull)": "Files",
+              "Value #LAST_BACKUP_DATA_ADDED (lastNotNull)": "Last Unique Data Added",
+              "Value #DURATION (lastNotNull)": "Duration",
+              "Value #LAST_BACKUP_TS (max)": "Last Backup Timestamp",
+              "Value #SINCE_LAST_BACKUP (lastNotNull)": "Since Last Backup"
+            }
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": { "type": "auto" }
+          },
+          "mappings": []
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Last Original Size" },
+            "properties": [{ "id": "unit", "value": "decbytes" }, { "id": "custom.width", "value": 120 }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Files" },
+            "properties": [{ "id": "custom.width", "value": 120 }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Last Unique Data Added" },
+            "properties": [
+              { "id": "unit", "value": "decbytes" },
+              { "id": "custom.width", "value": 120 },
+              { "id": "description", "value": "New data this backup added to the repository (restic's snapshot summary 'data_added'). Unset for snapshots taken by a restic version too old to record it." }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Duration" },
+            "properties": [{ "id": "unit", "value": "dtdurations" }, { "id": "custom.width", "value": 200 }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Last Backup Timestamp" },
+            "properties": [{ "id": "unit", "value": "dateTimeAsSystem" }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Since Last Backup" },
+            "properties": [
+              { "id": "unit", "value": "dtdurationms" },
+              { "id": "decimals", "value": 1 },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    { "color": "dark-green", "value": null },
+                    { "color": "dark-orange", "value": 432000000 },
+                    { "color": "dark-red", "value": 864000000 }
+                  ]
+                }
+              },
+              { "id": "custom.cellOptions", "value": { "type": "color-background" } }
+            ]
+          }
+        ]
+      }
+    },
+    {
       "collapsed": false,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 4
+        "y": 20
       },
       "id": 6,
       "panels": [],
       "repeat": "repository",
       "repeatDirection": "h",
-      "title": "Backups for $repository",
+      "title": "Backups for $repository (Borg)",
       "type": "row"
     },
     {
@@ -287,7 +446,7 @@
         "h": 9,
         "w": 2,
         "x": 0,
-        "y": 23
+        "y": 39
       },
       "id": 62,
       "maxDataPoints": 100,
@@ -314,7 +473,7 @@
           "datasource": "${DS_PROMETHEUS}",
           "editorMode": "code",
           "exemplar": false,
-          "expr": "time() - last_over_time(borg_last_collect_timestamp{repository=~\"^$repository$\"}[7d])",
+          "expr": "time() - last_over_time(exporter_last_collect_timestamp{tool=\"borg\", repository=~\"^$repository$\"}[7d])",
           "instant": true,
           "legendFormat": "__auto",
           "range": false,
@@ -352,7 +511,7 @@
         "h": 9,
         "w": 2,
         "x": 2,
-        "y": 23
+        "y": 39
       },
       "id": 60,
       "options": {
@@ -377,7 +536,7 @@
         {
           "datasource": "${DS_PROMETHEUS}",
           "editorMode": "code",
-          "expr": "borg_last_collect_error{repository=~\"^$repository$\"}",
+          "expr": "exporter_last_collect_error{tool=\"borg\", repository=~\"^$repository$\"}",
           "instant": false,
           "legendFormat": "__auto",
           "range": true,
@@ -417,7 +576,7 @@
         "h": 9,
         "w": 2,
         "x": 4,
-        "y": 23
+        "y": 39
       },
       "id": 61,
       "options": {
@@ -442,7 +601,7 @@
         {
           "datasource": "${DS_PROMETHEUS}",
           "editorMode": "code",
-          "expr": "borg_last_collect_duration_seconds{repository=~\"^$repository$\"}",
+          "expr": "exporter_last_collect_duration_seconds{tool=\"borg\", repository=~\"^$repository$\"}",
           "instant": false,
           "legendFormat": "__auto",
           "range": true,
@@ -461,7 +620,7 @@
         "h": 10,
         "w": 24,
         "x": 0,
-        "y": 5
+        "y": 21
       },
       "id": 78,
       "targets": [
@@ -607,7 +766,7 @@
       "title": "Archive files",
       "description": "Number of files for the last N archives of this repository.",
       "type": "barchart",
-      "gridPos": { "h": 8, "w": 4.8, "x": 0, "y": 15 },
+      "gridPos": { "h": 8, "w": 4.8, "x": 0, "y": 31 },
       "id": 79,
       "targets": [
         {
@@ -707,7 +866,7 @@
       "title": "Archive duration",
       "description": "Backup duration for the last N archives of this repository.",
       "type": "barchart",
-      "gridPos": { "h": 8, "w": 4.8, "x": 4.8, "y": 15 },
+      "gridPos": { "h": 8, "w": 4.8, "x": 4.8, "y": 31 },
       "id": 80,
       "targets": [
         {
@@ -807,7 +966,7 @@
       "title": "Archive original size",
       "description": "Original size for the last N archives of this repository.",
       "type": "barchart",
-      "gridPos": { "h": 8, "w": 4.8, "x": 9.6, "y": 15 },
+      "gridPos": { "h": 8, "w": 4.8, "x": 9.6, "y": 31 },
       "id": 81,
       "targets": [
         {
@@ -907,7 +1066,7 @@
       "title": "Archive compressed size",
       "description": "Compressed size for the last N archives of this repository.",
       "type": "barchart",
-      "gridPos": { "h": 8, "w": 4.8, "x": 14.4, "y": 15 },
+      "gridPos": { "h": 8, "w": 4.8, "x": 14.4, "y": 31 },
       "id": 82,
       "targets": [
         {
@@ -1007,7 +1166,7 @@
       "title": "Archive unique data added",
       "description": "New data each archive added to the repository, relative to what else is currently in the repository (not the same as the archive's own size). Recomputed each collection, so older bars can change as newer archives are added.",
       "type": "barchart",
-      "gridPos": { "h": 8, "w": 4.8, "x": 19.2, "y": 15 },
+      "gridPos": { "h": 8, "w": 4.8, "x": 19.2, "y": 31 },
       "id": 83,
       "targets": [
         {
@@ -1101,6 +1260,753 @@
         "xTickLabelRotation": -45,
         "xTickLabelSpacing": 0
       }
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 48
+      },
+      "id": 101,
+      "panels": [],
+      "repeat": "restic_repository",
+      "repeatDirection": "h",
+      "title": "Backups for $restic_repository (Restic)",
+      "type": "row"
+    },
+    {
+      "datasource": "${DS_PROMETHEUS}",
+      "title": "Archive history",
+      "description": "Size, file count and duration for the last N snapshots of this repository (see ARCHIVE_HISTORY_LIMIT). Duration and Unique Data Added are unset for snapshots taken by a restic version too old to record them.",
+      "type": "table",
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 49
+      },
+      "id": 105,
+      "targets": [
+        {
+          "refId": "TIMESTAMP",
+          "expr": "restic_archive_timestamp{repository=~\"^$restic_repository$\"} * 1000",
+          "format": "table",
+          "datasource": "${DS_PROMETHEUS}"
+        },
+        {
+          "refId": "DURATION",
+          "expr": "restic_archive_duration_seconds{repository=~\"^$restic_repository$\"}",
+          "format": "table",
+          "datasource": "${DS_PROMETHEUS}"
+        },
+        {
+          "refId": "FILES",
+          "expr": "restic_archive_files{repository=~\"^$restic_repository$\"}",
+          "format": "table",
+          "datasource": "${DS_PROMETHEUS}"
+        },
+        {
+          "refId": "ORIGINAL_SIZE",
+          "expr": "restic_archive_original_size_bytes{repository=~\"^$restic_repository$\"}",
+          "format": "table",
+          "datasource": "${DS_PROMETHEUS}"
+        },
+        {
+          "refId": "DATA_ADDED",
+          "expr": "restic_archive_data_added_bytes{repository=~\"^$restic_repository$\"}",
+          "format": "table",
+          "datasource": "${DS_PROMETHEUS}"
+        }
+      ],
+      "transformations": [
+        { "id": "merge", "options": {} },
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "config": {
+                  "id": "isNotNull",
+                  "options": {}
+                },
+                "fieldName": "snapshot"
+              }
+            ],
+            "match": "any",
+            "type": "include"
+          }
+        },
+        {
+          "id": "groupBy",
+          "options": {
+            "fields": {
+              "repository": { "aggregations": [], "operation": "groupby" },
+              "snapshot": { "aggregations": [], "operation": "groupby" },
+              "Value #TIMESTAMP": { "aggregations": ["lastNotNull"], "operation": "aggregate" },
+              "Value #DURATION": { "aggregations": ["lastNotNull"], "operation": "aggregate" },
+              "Value #FILES": { "aggregations": ["lastNotNull"], "operation": "aggregate" },
+              "Value #ORIGINAL_SIZE": { "aggregations": ["lastNotNull"], "operation": "aggregate" },
+              "Value #DATA_ADDED": { "aggregations": ["lastNotNull"], "operation": "aggregate" }
+            }
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": { "repository": true },
+            "indexByName": {
+              "snapshot": 0,
+              "Value #TIMESTAMP (lastNotNull)": 1,
+              "Value #DURATION (lastNotNull)": 2,
+              "Value #FILES (lastNotNull)": 3,
+              "Value #ORIGINAL_SIZE (lastNotNull)": 4,
+              "Value #DATA_ADDED (lastNotNull)": 5
+            },
+            "renameByName": {
+              "snapshot": "Snapshot",
+              "Value #TIMESTAMP (lastNotNull)": "Start",
+              "Value #DURATION (lastNotNull)": "Duration",
+              "Value #FILES (lastNotNull)": "Files",
+              "Value #ORIGINAL_SIZE (lastNotNull)": "Original Size",
+              "Value #DATA_ADDED (lastNotNull)": "Unique Data Added"
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [{ "field": "Start", "desc": true }]
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": { "type": "auto" }
+          },
+          "mappings": []
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Start" },
+            "properties": [{ "id": "unit", "value": "dateTimeAsSystem" }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Duration" },
+            "properties": [{ "id": "unit", "value": "dtdurations" }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Original Size" },
+            "properties": [{ "id": "unit", "value": "decbytes" }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Unique Data Added" },
+            "properties": [
+              { "id": "unit", "value": "decbytes" },
+              { "id": "description", "value": "New data this snapshot added to the repository (restic's snapshot summary 'data_added'). Unset for snapshots taken by a restic version too old to record it." }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "datasource": "${DS_PROMETHEUS}",
+      "title": "Archive files",
+      "description": "Number of files for the last N snapshots of this repository.",
+      "type": "barchart",
+      "gridPos": { "h": 8, "w": 6, "x": 0, "y": 59 },
+      "id": 106,
+      "targets": [
+        {
+          "refId": "TIMESTAMP",
+          "expr": "restic_archive_timestamp{repository=~\"^$restic_repository$\"} * 1000",
+          "format": "table",
+          "datasource": "${DS_PROMETHEUS}"
+        },
+        {
+          "refId": "FILES",
+          "expr": "restic_archive_files{repository=~\"^$restic_repository$\"}",
+          "format": "table",
+          "datasource": "${DS_PROMETHEUS}"
+        }
+      ],
+      "transformations": [
+        { "id": "merge", "options": {} },
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [{ "config": { "id": "isNotNull", "options": {} }, "fieldName": "snapshot" }],
+            "match": "any",
+            "type": "include"
+          }
+        },
+        {
+          "id": "groupBy",
+          "options": {
+            "fields": {
+              "repository": { "aggregations": [], "operation": "groupby" },
+              "snapshot": { "aggregations": [], "operation": "groupby" },
+              "Value #TIMESTAMP": { "aggregations": ["lastNotNull"], "operation": "aggregate" },
+              "Value #FILES": { "aggregations": ["lastNotNull"], "operation": "aggregate" }
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [{ "field": "Value #TIMESTAMP (lastNotNull)" }]
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": { "repository": true, "Value #TIMESTAMP (lastNotNull)": true },
+            "indexByName": {
+              "snapshot": 0,
+              "Value #FILES (lastNotNull)": 1
+            },
+            "renameByName": {
+              "snapshot": "Snapshot",
+              "Value #FILES (lastNotNull)": "Files"
+            }
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineWidth": 1,
+            "scaleDistribution": { "type": "linear" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "barRadius": 0,
+        "barWidth": 0.97,
+        "fullHighlight": false,
+        "groupWidth": 0.7,
+        "legend": { "calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "orientation": "auto",
+        "showValue": "auto",
+        "stacking": "none",
+        "tooltip": { "mode": "single", "sort": "none" },
+        "xTickLabelMaxLength": 10,
+        "xTickLabelRotation": -45,
+        "xTickLabelSpacing": 0
+      }
+    },
+    {
+      "datasource": "${DS_PROMETHEUS}",
+      "title": "Archive duration",
+      "description": "Backup duration for the last N snapshots of this repository. Unset for snapshots taken by a restic version too old to record it.",
+      "type": "barchart",
+      "gridPos": { "h": 8, "w": 6, "x": 6, "y": 59 },
+      "id": 107,
+      "targets": [
+        {
+          "refId": "TIMESTAMP",
+          "expr": "restic_archive_timestamp{repository=~\"^$restic_repository$\"} * 1000",
+          "format": "table",
+          "datasource": "${DS_PROMETHEUS}"
+        },
+        {
+          "refId": "DURATION",
+          "expr": "restic_archive_duration_seconds{repository=~\"^$restic_repository$\"}",
+          "format": "table",
+          "datasource": "${DS_PROMETHEUS}"
+        }
+      ],
+      "transformations": [
+        { "id": "merge", "options": {} },
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [{ "config": { "id": "isNotNull", "options": {} }, "fieldName": "snapshot" }],
+            "match": "any",
+            "type": "include"
+          }
+        },
+        {
+          "id": "groupBy",
+          "options": {
+            "fields": {
+              "repository": { "aggregations": [], "operation": "groupby" },
+              "snapshot": { "aggregations": [], "operation": "groupby" },
+              "Value #TIMESTAMP": { "aggregations": ["lastNotNull"], "operation": "aggregate" },
+              "Value #DURATION": { "aggregations": ["lastNotNull"], "operation": "aggregate" }
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [{ "field": "Value #TIMESTAMP (lastNotNull)" }]
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": { "repository": true, "Value #TIMESTAMP (lastNotNull)": true },
+            "indexByName": {
+              "snapshot": 0,
+              "Value #DURATION (lastNotNull)": 1
+            },
+            "renameByName": {
+              "snapshot": "Snapshot",
+              "Value #DURATION (lastNotNull)": "Duration"
+            }
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineWidth": 1,
+            "scaleDistribution": { "type": "linear" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "options": {
+        "barRadius": 0,
+        "barWidth": 0.97,
+        "fullHighlight": false,
+        "groupWidth": 0.7,
+        "legend": { "calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "orientation": "auto",
+        "showValue": "auto",
+        "stacking": "none",
+        "tooltip": { "mode": "single", "sort": "none" },
+        "xTickLabelMaxLength": 10,
+        "xTickLabelRotation": -45,
+        "xTickLabelSpacing": 0
+      }
+    },
+    {
+      "datasource": "${DS_PROMETHEUS}",
+      "title": "Archive original size",
+      "description": "Original size for the last N snapshots of this repository.",
+      "type": "barchart",
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 59 },
+      "id": 108,
+      "targets": [
+        {
+          "refId": "TIMESTAMP",
+          "expr": "restic_archive_timestamp{repository=~\"^$restic_repository$\"} * 1000",
+          "format": "table",
+          "datasource": "${DS_PROMETHEUS}"
+        },
+        {
+          "refId": "ORIGINAL_SIZE",
+          "expr": "restic_archive_original_size_bytes{repository=~\"^$restic_repository$\"}",
+          "format": "table",
+          "datasource": "${DS_PROMETHEUS}"
+        }
+      ],
+      "transformations": [
+        { "id": "merge", "options": {} },
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [{ "config": { "id": "isNotNull", "options": {} }, "fieldName": "snapshot" }],
+            "match": "any",
+            "type": "include"
+          }
+        },
+        {
+          "id": "groupBy",
+          "options": {
+            "fields": {
+              "repository": { "aggregations": [], "operation": "groupby" },
+              "snapshot": { "aggregations": [], "operation": "groupby" },
+              "Value #TIMESTAMP": { "aggregations": ["lastNotNull"], "operation": "aggregate" },
+              "Value #ORIGINAL_SIZE": { "aggregations": ["lastNotNull"], "operation": "aggregate" }
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [{ "field": "Value #TIMESTAMP (lastNotNull)" }]
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": { "repository": true, "Value #TIMESTAMP (lastNotNull)": true },
+            "indexByName": {
+              "snapshot": 0,
+              "Value #ORIGINAL_SIZE (lastNotNull)": 1
+            },
+            "renameByName": {
+              "snapshot": "Snapshot",
+              "Value #ORIGINAL_SIZE (lastNotNull)": "Original Size"
+            }
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineWidth": 1,
+            "scaleDistribution": { "type": "linear" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "unit": "decbytes"
+        },
+        "overrides": []
+      },
+      "options": {
+        "barRadius": 0,
+        "barWidth": 0.97,
+        "fullHighlight": false,
+        "groupWidth": 0.7,
+        "legend": { "calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "orientation": "auto",
+        "showValue": "auto",
+        "stacking": "none",
+        "tooltip": { "mode": "single", "sort": "none" },
+        "xTickLabelMaxLength": 10,
+        "xTickLabelRotation": -45,
+        "xTickLabelSpacing": 0
+      }
+    },
+    {
+      "datasource": "${DS_PROMETHEUS}",
+      "title": "Archive unique data added",
+      "description": "New data each snapshot added to the repository (restic's snapshot summary 'data_added'). Unset for snapshots taken by a restic version too old to record it.",
+      "type": "barchart",
+      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 59 },
+      "id": 109,
+      "targets": [
+        {
+          "refId": "TIMESTAMP",
+          "expr": "restic_archive_timestamp{repository=~\"^$restic_repository$\"} * 1000",
+          "format": "table",
+          "datasource": "${DS_PROMETHEUS}"
+        },
+        {
+          "refId": "DATA_ADDED",
+          "expr": "restic_archive_data_added_bytes{repository=~\"^$restic_repository$\"}",
+          "format": "table",
+          "datasource": "${DS_PROMETHEUS}"
+        }
+      ],
+      "transformations": [
+        { "id": "merge", "options": {} },
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [{ "config": { "id": "isNotNull", "options": {} }, "fieldName": "snapshot" }],
+            "match": "any",
+            "type": "include"
+          }
+        },
+        {
+          "id": "groupBy",
+          "options": {
+            "fields": {
+              "repository": { "aggregations": [], "operation": "groupby" },
+              "snapshot": { "aggregations": [], "operation": "groupby" },
+              "Value #TIMESTAMP": { "aggregations": ["lastNotNull"], "operation": "aggregate" },
+              "Value #DATA_ADDED": { "aggregations": ["lastNotNull"], "operation": "aggregate" }
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [{ "field": "Value #TIMESTAMP (lastNotNull)" }]
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": { "repository": true, "Value #TIMESTAMP (lastNotNull)": true },
+            "indexByName": {
+              "snapshot": 0,
+              "Value #DATA_ADDED (lastNotNull)": 1
+            },
+            "renameByName": {
+              "snapshot": "Snapshot",
+              "Value #DATA_ADDED (lastNotNull)": "Unique Data Added"
+            }
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineWidth": 1,
+            "scaleDistribution": { "type": "linear" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "unit": "decbytes"
+        },
+        "overrides": []
+      },
+      "options": {
+        "barRadius": 0,
+        "barWidth": 0.97,
+        "fullHighlight": false,
+        "groupWidth": 0.7,
+        "legend": { "calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "orientation": "auto",
+        "showValue": "auto",
+        "stacking": "none",
+        "tooltip": { "mode": "single", "sort": "none" },
+        "xTickLabelMaxLength": 10,
+        "xTickLabelRotation": -45,
+        "xTickLabelSpacing": 0
+      }
+    },
+    {
+      "datasource": "${DS_PROMETHEUS}",
+      "description": "Time since last exporter collection",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 604800
+              }
+            ]
+          },
+          "unit": "dtdurations"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 2,
+        "x": 0,
+        "y": 67
+      },
+      "id": 102,
+      "maxDataPoints": 100,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.2.0",
+      "targets": [
+        {
+          "datasource": "${DS_PROMETHEUS}",
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "time() - last_over_time(exporter_last_collect_timestamp{tool=\"restic\", repository=~\"^$restic_repository$\"}[7d])",
+          "instant": true,
+          "legendFormat": "__auto",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Last collection",
+      "type": "stat"
+    },
+    {
+      "datasource": "${DS_PROMETHEUS}",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 2,
+        "x": 2,
+        "y": 67
+      },
+      "id": 103,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.2.0",
+      "targets": [
+        {
+          "datasource": "${DS_PROMETHEUS}",
+          "editorMode": "code",
+          "expr": "exporter_last_collect_error{tool=\"restic\", repository=~\"^$restic_repository$\"}",
+          "instant": false,
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Last collection error",
+      "type": "stat"
+    },
+    {
+      "datasource": "${DS_PROMETHEUS}",
+      "description": "Duration of the last exporter collection",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 2,
+        "x": 4,
+        "y": 67
+      },
+      "id": 104,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.2.0",
+      "targets": [
+        {
+          "datasource": "${DS_PROMETHEUS}",
+          "editorMode": "code",
+          "expr": "exporter_last_collect_duration_seconds{tool=\"restic\", repository=~\"^$restic_repository$\"}",
+          "instant": false,
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Last collection duration",
+      "type": "stat"
     }
   ],
   "schemaVersion": 39,
@@ -1134,6 +2040,34 @@
         "skipUrlSync": false,
         "sort": 0,
         "type": "query"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": "${DS_PROMETHEUS}",
+        "definition": "label_values(restic_last_snapshot_info,repository)",
+        "hide": 0,
+        "includeAll": true,
+        "multi": true,
+        "name": "restic_repository",
+        "options": [],
+        "query": {
+          "qryType": 1,
+          "query": "label_values(restic_last_snapshot_info,repository)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
       }
     ]
   },
@@ -1143,7 +2077,7 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "Borg",
+  "title": "Backup Exporter",
   "uid": "be2qvzcxrzh1ca",
   "version": 32,
   "weekStart": ""
