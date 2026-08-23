@@ -9,28 +9,28 @@ config file.
 
 ### Borg
 
-| Name                                       | Description                                      | Type  |
-|---------------------------------------------|---------------------------------------------------|-------|
-| `borg_last_backup_duration_seconds`        | Duration of the last backup in seconds           | Gauge |
-| `borg_last_backup_compressed_size_bytes`   | Compressed size of the last backup in bytes      | Gauge |
-| `borg_last_backup_deduplicated_size_bytes` | Deduplicated size of the last backup in bytes**  | Gauge |
-| `borg_last_backup_files`                   | Number of files in the last backup               | Gauge |
-| `borg_last_backup_original_size_bytes`     | Original size of the last backup in bytes        | Gauge |
-| `borg_last_backup_timestamp`               | Timestamp of the last backup (unix epoch*)       | Gauge |
-| `borg_archive_duration_seconds`            | Duration of the archive's backup in seconds      | Gauge |
-| `borg_archive_compressed_size_bytes`       | Compressed size of the archive in bytes          | Gauge |
-| `borg_archive_deduplicated_size_bytes`     | Deduplicated size of the archive in bytes**      | Gauge |
-| `borg_archive_files`                       | Number of files in the archive                   | Gauge |
-| `borg_archive_original_size_bytes`         | Original size of the archive in bytes            | Gauge |
-| `borg_archive_timestamp`                   | Timestamp of the archive's backup (unix epoch*)  | Gauge |
-| `borg_total_chunks`                        | Repository total chunks                          | Gauge |
-| `borg_total_compressed_size_bytes`         | Repository total compressed size                 | Gauge |
-| `borg_total_size_bytes`                    | Repository total size                            | Gauge |
-| `borg_total_unique_chunks`                 | Repository total unique chunks                   | Gauge |
-| `borg_deduplicated_compressed_size_bytes`  | Repository deduplicated compressed size          | Gauge |
-| `borg_deduplicated_size_bytes`             | Repository deduplicated size                     | Gauge |
-| `borg_last_archive_info`                   | Information about the last backup archive        | Gauge |
-| `borg_repository_info`                     | Information about the backup repository          | Gauge |
+| Name                                       | Description                                     | Type  |
+|--------------------------------------------|-------------------------------------------------|-------|
+| `borg_last_backup_duration_seconds`        | Duration of the last backup in seconds          | Gauge |
+| `borg_last_backup_compressed_size_bytes`   | Compressed size of the last backup in bytes     | Gauge |
+| `borg_last_backup_deduplicated_size_bytes` | Deduplicated size of the last backup in bytes** | Gauge |
+| `borg_last_backup_files`                   | Number of files in the last backup              | Gauge |
+| `borg_last_backup_original_size_bytes`     | Original size of the last backup in bytes       | Gauge |
+| `borg_last_backup_timestamp`               | Timestamp of the last backup (unix epoch*)      | Gauge |
+| `borg_archive_duration_seconds`            | Duration of the archive's backup in seconds     | Gauge |
+| `borg_archive_compressed_size_bytes`       | Compressed size of the archive in bytes         | Gauge |
+| `borg_archive_deduplicated_size_bytes`     | Deduplicated size of the archive in bytes**     | Gauge |
+| `borg_archive_files`                       | Number of files in the archive                  | Gauge |
+| `borg_archive_original_size_bytes`         | Original size of the archive in bytes           | Gauge |
+| `borg_archive_timestamp`                   | Timestamp of the archive's backup (unix epoch*) | Gauge |
+| `borg_total_chunks`                        | Repository total chunks                         | Gauge |
+| `borg_total_compressed_size_bytes`         | Repository total compressed size                | Gauge |
+| `borg_total_size_bytes`                    | Repository total size                           | Gauge |
+| `borg_total_unique_chunks`                 | Repository total unique chunks                  | Gauge |
+| `borg_deduplicated_compressed_size_bytes`  | Repository deduplicated compressed size         | Gauge |
+| `borg_deduplicated_size_bytes`             | Repository deduplicated size                    | Gauge |
+| `borg_last_archive_info`                   | Information about the last backup archive       | Gauge |
+| `borg_repository_info`                     | Information about the backup repository         | Gauge |
 
 \* number of seconds that have elapsed since January 1, 1970  
 \*\* this is *not* "the size of this backup after deduplication". Borg computes it as the data
@@ -48,21 +48,21 @@ reflect what Prometheus has scraped over time.
 
 ### Restic
 
-| Name                                          | Description                                                             | Type  |
-|------------------------------------------------|----------------------------------------------------------------------------|-------|
-| `restic_last_backup_duration_seconds`         | Duration of the last backup in seconds***                              | Gauge |
-| `restic_last_backup_original_size_bytes`      | Original (restore) size of the last backup in bytes                    | Gauge |
-| `restic_last_backup_files`                    | Number of files in the last backup                                     | Gauge |
-| `restic_last_backup_timestamp`                | Timestamp of the last backup (unix epoch*)                             | Gauge |
-| `restic_last_backup_data_added_bytes`         | Uncompressed data added to the repository by the last backup***        | Gauge |
-| `restic_last_backup_data_added_packed_bytes`  | Compressed data added to the repository by the last backup***          | Gauge |
-| `restic_archive_duration_seconds`             | Duration of the snapshot's backup in seconds***                        | Gauge |
-| `restic_archive_original_size_bytes`          | Original (restore) size of the snapshot in bytes                       | Gauge |
-| `restic_archive_files`                        | Number of files in the snapshot                                        | Gauge |
-| `restic_archive_timestamp`                    | Timestamp of the snapshot's backup (unix epoch*)                       | Gauge |
-| `restic_archive_data_added_bytes`             | Uncompressed data added to the repository by this snapshot***          | Gauge |
-| `restic_archive_data_added_packed_bytes`      | Compressed data added to the repository by this snapshot***            | Gauge |
-| `restic_last_snapshot_info`                   | Information about the last backup snapshot                             | Gauge |
+| Name                                         | Description                                                     | Type  |
+|----------------------------------------------|-----------------------------------------------------------------|-------|
+| `restic_last_backup_duration_seconds`        | Duration of the last backup in seconds***                       | Gauge |
+| `restic_last_backup_original_size_bytes`     | Original (restore) size of the last backup in bytes             | Gauge |
+| `restic_last_backup_files`                   | Number of files in the last backup                              | Gauge |
+| `restic_last_backup_timestamp`               | Timestamp of the last backup (unix epoch*)                      | Gauge |
+| `restic_last_backup_data_added_bytes`        | Uncompressed data added to the repository by the last backup*** | Gauge |
+| `restic_last_backup_data_added_packed_bytes` | Compressed data added to the repository by the last backup***   | Gauge |
+| `restic_archive_duration_seconds`            | Duration of the snapshot's backup in seconds***                 | Gauge |
+| `restic_archive_original_size_bytes`         | Original (restore) size of the snapshot in bytes                | Gauge |
+| `restic_archive_files`                       | Number of files in the snapshot                                 | Gauge |
+| `restic_archive_timestamp`                   | Timestamp of the snapshot's backup (unix epoch*)                | Gauge |
+| `restic_archive_data_added_bytes`            | Uncompressed data added to the repository by this snapshot***   | Gauge |
+| `restic_archive_data_added_packed_bytes`     | Compressed data added to the repository by this snapshot***     | Gauge |
+| `restic_last_snapshot_info`                  | Information about the last backup snapshot                      | Gauge |
 
 \* number of seconds that have elapsed since January 1, 1970  
 \*\*\* restic only records this data (its snapshot "summary" block) from a version recent enough to capture
@@ -86,13 +86,13 @@ dropped from the cache too.
 
 ### Exporter (shared across tools)
 
-| Name                                       | Description                                          | Type    |
-|---------------------------------------------|---------------------------------------------------------|---------|
-| `exporter_collect_errors`                  | Number of errors encountered while collecting metrics | Counter |
-| `exporter_last_collect_error`              | 1 if the last collection failed, 0 if successful      | Gauge   |
-| `exporter_last_collect_duration_seconds`   | Duration of the last metrics collection                | Gauge   |
-| `exporter_last_collect_timestamp`          | Timestamp of the last metrics collection                | Gauge   |
-| `exporter_system_info`                     | Information about a configured backup tool              | Gauge   |
+| Name                                     | Description                                           | Type    |
+|------------------------------------------|-------------------------------------------------------|---------|
+| `exporter_collect_errors`                | Number of errors encountered while collecting metrics | Counter |
+| `exporter_last_collect_error`            | 1 if the last collection failed, 0 if successful      | Gauge   |
+| `exporter_last_collect_duration_seconds` | Duration of the last metrics collection               | Gauge   |
+| `exporter_last_collect_timestamp`        | Timestamp of the last metrics collection              | Gauge   |
+| `exporter_system_info`                   | Information about a configured backup tool            | Gauge   |
 
 These describe the exporter's own operation rather than backup domain data, so they're shared across every
 configured tool instead of duplicated per tool. They're labeled by `tool` (`borg` or `restic`) and
@@ -128,19 +128,19 @@ restic setups, but is discouraged — the exporter logs a warning on startup for
 
 Everything else is configured by flags or environment variables:
 
-| Environment variable       | Flag                        | Description                                                                                            | Required | Default    |
-|-----------------------------|-------------------------------|-------------------------------------------------------------------------------------------------------|----------|------------|
-| `CONFIG_FILE`               | `-config`                    | Path to the YAML repositories config file (see above)                                                 | `yes`    | ``         |
-| `LISTEN_ADDRESS`            | `-listen-address`            | Address on which the server is to listen for connections                                              |          | `:9099`    |
-| `METRICS_PATH`              | `-metrics-path`               | Path on which the server exposes the metrics                                                          |          | `/metrics` |
-| `BORG_REFRESH_INTERVAL`     | `-borg-refresh-interval`      | Frequency at which borg metrics are refreshed                                                          |          | `4h`       |
-| `RESTIC_REFRESH_INTERVAL`   | `-restic-refresh-interval`    | Frequency at which restic metrics are refreshed                                                        |          | `4h`       |
-| `SCHEDULER_CHECK_INTERVAL`  | `-scheduler-check-interval`   | Frequency at which each scheduler checks if its metrics need to be refreshed                          |          | `20s`      |
-| `COMMAND_TIMEOUT`           | `-command-timeout`            | Timeout for a full collection cycle (all repositories of one tool)                                    |          | `120s`     |
-| `BORG_PATH`                 | `-borg-path`                  | Path to the borg binary                                                                                |          | `borg`     |
-| `RESTIC_PATH`                | `-restic-path`                | Path to the restic binary                                                                              |          | `restic`   |
-| `LOG_LEVEL`                  | `-log-level`                  | Logging level (debug, info, warn, error)                                                                |          | `info`     |
-| `ARCHIVE_HISTORY_LIMIT`      | `-archive-history-limit`      | Number of most recent archives/snapshots to expose `*_archive_*` per-item metrics for, shared by both tools |    | `10`       |
+| Environment variable       | Flag                        | Description                                                                                                 | Required | Default    |
+|----------------------------|-----------------------------|-------------------------------------------------------------------------------------------------------------|----------|------------|
+| `CONFIG_FILE`              | `-config`                   | Path to the YAML repositories config file (see above)                                                       | `yes`    | ``         |
+| `LISTEN_ADDRESS`           | `-listen-address`           | Address on which the server is to listen for connections                                                    |          | `:9099`    |
+| `METRICS_PATH`             | `-metrics-path`             | Path on which the server exposes the metrics                                                                |          | `/metrics` |
+| `BORG_REFRESH_INTERVAL`    | `-borg-refresh-interval`    | Frequency at which borg metrics are refreshed                                                               |          | `4h`       |
+| `RESTIC_REFRESH_INTERVAL`  | `-restic-refresh-interval`  | Frequency at which restic metrics are refreshed                                                             |          | `4h`       |
+| `SCHEDULER_CHECK_INTERVAL` | `-scheduler-check-interval` | Frequency at which each scheduler checks if its metrics need to be refreshed                                |          | `20s`      |
+| `COMMAND_TIMEOUT`          | `-command-timeout`          | Timeout for a full collection cycle (all repositories of one tool)                                          |          | `120s`     |
+| `BORG_PATH`                | `-borg-path`                | Path to the borg binary                                                                                     |          | `borg`     |
+| `RESTIC_PATH`              | `-restic-path`              | Path to the restic binary                                                                                   |          | `restic`   |
+| `LOG_LEVEL`                | `-log-level`                | Logging level (debug, info, warn, error)                                                                    |          | `info`     |
+| `ARCHIVE_HISTORY_LIMIT`    | `-archive-history-limit`    | Number of most recent archives/snapshots to expose `*_archive_*` per-item metrics for, shared by both tools |          | `10`       |
 
 Borg and restic are collected by two independent schedulers, each on its own refresh interval — a slow/WAN
 restic collection won't delay Borg's (or vice versa). If a config file has only one of the two repository
