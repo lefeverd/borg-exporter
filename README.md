@@ -256,7 +256,7 @@ The dashboard file was renamed from `borg-last-backups.json` to `backup-exporter
 tools. Grafana UI imports (keyed by the dashboard's `uid`) are unaffected, but if you provision it by file path
 (e.g. GitOps-style), update the path.
 
-![Grafana Dashboard](./dashboards/grafana-borg-dashboard.png)
+![Grafana Dashboard](./dashboards/grafana-exporter-dashboard.png)
 
 ## Release
 
