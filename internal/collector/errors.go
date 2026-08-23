@@ -1,10 +1,11 @@
-package web
+package collector
 
 import "fmt"
 
 // RepositoryCollectionError is used in case of error during the metrics collection
-// for a borg repository
+// for a repository
 type RepositoryCollectionError struct {
+	Tool       string
 	Repository string
 	Msg        string
 	Err        error

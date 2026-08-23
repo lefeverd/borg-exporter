@@ -1,20 +1,32 @@
-package web
+package borg
 
 import (
 	"testing"
 	"time"
 
-	"github.com/lefeverd/borg-exporter/internal/models"
-	"github.com/lefeverd/borg-exporter/internal/parser"
+	"github.com/lefeverd/backup-exporter/internal/models"
 	"github.com/prometheus/client_golang/prometheus/testutil"
+	"github.com/stretchr/testify/assert"
 )
 
-func archiveAt(name string, start time.Time) parser.InfoOutputArchive {
-	return parser.InfoOutputArchive{
+func TestInfoArgs_SplitsMultiWordOpts(t *testing.T) {
+	repo := Repository{Path: "/repo", Opts: "--lock-wait 5"}
+	args := infoArgs(repo, 10)
+	assert.Equal(t, []string{"--lock-wait", "5", "info", "--last", "10", "--json", "/repo"}, args)
+}
+
+func TestInfoArgs_NoOpts(t *testing.T) {
+	repo := Repository{Path: "/repo"}
+	args := infoArgs(repo, 10)
+	assert.Equal(t, []string{"info", "--last", "10", "--json", "/repo"}, args)
+}
+
+func archiveAt(name string, start time.Time) InfoOutputArchive {
+	return InfoOutputArchive{
 		Name:     name,
 		Duration: 12.5,
-		Start:    parser.BorgTime{Time: start},
-		Stats: parser.InfoOutputArchiveStats{
+		Start:    BorgTime{Time: start},
+		Stats: InfoOutputArchiveStats{
 			CompressedSize:   100,
 			DeduplicatedSize: 50,
 			NFiles:           10,
@@ -24,10 +36,10 @@ func archiveAt(name string, start time.Time) parser.InfoOutputArchive {
 }
 
 func TestSetArchiveMetrics(t *testing.T) {
-	metrics := models.NewBorgMetrics("1.4.4")
+	metrics := models.NewBorgMetrics()
 	start := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
 
-	archives := []parser.InfoOutputArchive{
+	archives := []InfoOutputArchive{
 		archiveAt("archive-1", start),
 		archiveAt("archive-2", start.Add(24*time.Hour)),
 	}
@@ -61,10 +73,10 @@ func TestSetArchiveMetrics(t *testing.T) {
 // pattern: archives that fall outside the --last N window on a later
 // collection must not linger as stale series.
 func TestSetArchiveMetrics_PrunesAgedOutArchives(t *testing.T) {
-	metrics := models.NewBorgMetrics("1.4.4")
+	metrics := models.NewBorgMetrics()
 	start := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
 
-	setArchiveMetrics(metrics, "repo-a", []parser.InfoOutputArchive{
+	setArchiveMetrics(metrics, "repo-a", []InfoOutputArchive{
 		archiveAt("archive-1", start),
 		archiveAt("archive-2", start.Add(24*time.Hour)),
 	})
@@ -76,7 +88,7 @@ func TestSetArchiveMetrics_PrunesAgedOutArchives(t *testing.T) {
 	metrics.ArchiveOriginalSize.Reset()
 	metrics.ArchiveTimestamp.Reset()
 
-	setArchiveMetrics(metrics, "repo-a", []parser.InfoOutputArchive{
+	setArchiveMetrics(metrics, "repo-a", []InfoOutputArchive{
 		archiveAt("archive-2", start.Add(24*time.Hour)),
 		archiveAt("archive-3", start.Add(48*time.Hour)),
 	})

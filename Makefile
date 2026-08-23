@@ -1,4 +1,4 @@
-APP_NAME := borg-exporter
+APP_NAME := backup-exporter
 VERSION := $(shell git describe --tags --always)
 BUILD_DIR := build
 

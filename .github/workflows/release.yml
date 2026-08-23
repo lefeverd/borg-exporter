@@ -32,7 +32,7 @@ jobs:
       - name: Upload Release Asset
         uses: actions/upload-artifact@v4
         with:
-          name: borg-exporter
+          name: backup-exporter
           path: build/
 
       - name: Release to GitHub

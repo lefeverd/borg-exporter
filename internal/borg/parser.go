@@ -1,4 +1,4 @@
-package parser
+package borg
 
 import (
 	"encoding/json"

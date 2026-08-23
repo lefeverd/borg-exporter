@@ -2,7 +2,7 @@
 
 ### Issue tracker
 
-Issues are tracked in GitHub Issues for `lefeverd/borg-exporter`, via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+Issues are tracked in GitHub Issues for `lefeverd/backup-exporter`, via the `gh` CLI. See `docs/agents/issue-tracker.md`.
 
 ### Domain docs
 
