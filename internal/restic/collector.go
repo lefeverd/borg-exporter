@@ -88,7 +88,7 @@ func (c *Collector) Collect(ctx context.Context) []error {
 	var errs []error
 	for _, repo := range c.Repositories {
 		startTime := time.Now()
-		c.Logger.Debug("Collecting metrics", "repository", repo.Name)
+		c.Logger.Info("Collecting metrics", "tool", toolName, "repository", repo.Name)
 
 		snapshots, err := c.listSnapshots(ctx, repo)
 		c.ExporterMetrics.LastCollectDuration.WithLabelValues(toolName, repo.Name).Set(time.Since(startTime).Seconds())
