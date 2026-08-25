@@ -866,7 +866,7 @@
       "title": "Archive duration",
       "description": "Backup duration for the last N archives of this repository.",
       "type": "barchart",
-      "gridPos": { "h": 8, "w": 4.8, "x": 4.8, "y": 31 },
+      "gridPos": { "h": 8, "w": 4.8, "x": 19.2, "y": 31 },
       "id": 80,
       "targets": [
         {
@@ -966,7 +966,7 @@
       "title": "Archive original size",
       "description": "Original size for the last N archives of this repository.",
       "type": "barchart",
-      "gridPos": { "h": 8, "w": 4.8, "x": 9.6, "y": 31 },
+      "gridPos": { "h": 8, "w": 4.8, "x": 4.8, "y": 31 },
       "id": 81,
       "targets": [
         {
@@ -1066,7 +1066,7 @@
       "title": "Archive compressed size",
       "description": "Compressed size for the last N archives of this repository.",
       "type": "barchart",
-      "gridPos": { "h": 8, "w": 4.8, "x": 14.4, "y": 31 },
+      "gridPos": { "h": 8, "w": 4.8, "x": 9.6, "y": 31 },
       "id": 82,
       "targets": [
         {
@@ -1166,7 +1166,7 @@
       "title": "Archive unique data added",
       "description": "New data each archive added to the repository, relative to what else is currently in the repository (not the same as the archive's own size). Recomputed each collection, so older bars can change as newer archives are added.",
       "type": "barchart",
-      "gridPos": { "h": 8, "w": 4.8, "x": 19.2, "y": 31 },
+      "gridPos": { "h": 8, "w": 4.8, "x": 14.4, "y": 31 },
       "id": 83,
       "targets": [
         {
@@ -1518,7 +1518,7 @@
       "title": "Archive duration",
       "description": "Backup duration for the last N snapshots of this repository. Unset for snapshots taken by a restic version too old to record it.",
       "type": "barchart",
-      "gridPos": { "h": 8, "w": 6, "x": 6, "y": 59 },
+      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 59 },
       "id": 107,
       "targets": [
         {
@@ -1618,7 +1618,7 @@
       "title": "Archive original size",
       "description": "Original size for the last N snapshots of this repository.",
       "type": "barchart",
-      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 59 },
+      "gridPos": { "h": 8, "w": 6, "x": 6, "y": 59 },
       "id": 108,
       "targets": [
         {
@@ -1718,7 +1718,7 @@
       "title": "Archive unique data added",
       "description": "New data each snapshot added to the repository (restic's snapshot summary 'data_added'). Unset for snapshots taken by a restic version too old to record it.",
       "type": "barchart",
-      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 59 },
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 59 },
       "id": 109,
       "targets": [
         {
