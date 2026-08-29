@@ -418,6 +418,77 @@
     },
     {
       "datasource": "${DS_PROMETHEUS}",
+      "description": "Time since the last backup for this repository",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "dark-green",
+                "value": null
+              },
+              {
+                "color": "dark-orange",
+                "value": 432000
+              },
+              {
+                "color": "dark-red",
+                "value": 864000
+              }
+            ]
+          },
+          "unit": "dtdurations"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 2,
+        "x": 0,
+        "y": 39
+      },
+      "id": 110,
+      "maxDataPoints": 100,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.2.0",
+      "targets": [
+        {
+          "datasource": "${DS_PROMETHEUS}",
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "time() - borg_last_backup_timestamp{repository=~\"^$repository$\"}",
+          "instant": true,
+          "legendFormat": "__auto",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Since last backup",
+      "type": "stat"
+    },
+    {
+      "datasource": "${DS_PROMETHEUS}",
       "description": "Time since last exporter collection",
       "fieldConfig": {
         "defaults": {
@@ -445,7 +516,7 @@
       "gridPos": {
         "h": 9,
         "w": 2,
-        "x": 0,
+        "x": 2,
         "y": 39
       },
       "id": 62,
@@ -510,7 +581,7 @@
       "gridPos": {
         "h": 9,
         "w": 2,
-        "x": 2,
+        "x": 4,
         "y": 39
       },
       "id": 60,
@@ -575,7 +646,7 @@
       "gridPos": {
         "h": 9,
         "w": 2,
-        "x": 4,
+        "x": 6,
         "y": 39
       },
       "id": 61,
@@ -1815,6 +1886,77 @@
     },
     {
       "datasource": "${DS_PROMETHEUS}",
+      "description": "Time since the last backup for this repository",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "dark-green",
+                "value": null
+              },
+              {
+                "color": "dark-orange",
+                "value": 432000
+              },
+              {
+                "color": "dark-red",
+                "value": 864000
+              }
+            ]
+          },
+          "unit": "dtdurations"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 2,
+        "x": 0,
+        "y": 67
+      },
+      "id": 111,
+      "maxDataPoints": 100,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.2.0",
+      "targets": [
+        {
+          "datasource": "${DS_PROMETHEUS}",
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "time() - restic_last_backup_timestamp{repository=~\"^$restic_repository$\"}",
+          "instant": true,
+          "legendFormat": "__auto",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Since last backup",
+      "type": "stat"
+    },
+    {
+      "datasource": "${DS_PROMETHEUS}",
       "description": "Time since last exporter collection",
       "fieldConfig": {
         "defaults": {
@@ -1842,7 +1984,7 @@
       "gridPos": {
         "h": 9,
         "w": 2,
-        "x": 0,
+        "x": 2,
         "y": 67
       },
       "id": 102,
@@ -1907,7 +2049,7 @@
       "gridPos": {
         "h": 9,
         "w": 2,
-        "x": 2,
+        "x": 4,
         "y": 67
       },
       "id": 103,
@@ -1972,7 +2114,7 @@
       "gridPos": {
         "h": 9,
         "w": 2,
-        "x": 4,
+        "x": 6,
         "y": 67
       },
       "id": 104,
@@ -2079,6 +2221,6 @@
   "timezone": "browser",
   "title": "Backup Exporter",
   "uid": "be2qvzcxrzh1ca",
-  "version": 32,
+  "version": 33,
   "weekStart": ""
 }
